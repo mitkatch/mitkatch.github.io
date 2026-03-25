@@ -2,7 +2,7 @@ baseURL = "https://mitkatch.github.io/"
 languageCode = "en-us"
 title = "HVAC-Vibe"
 theme = "PaperMod"
-paginate = 10
+
 
 enableRobotsTXT = true
 enableEmoji = true
@@ -20,7 +20,7 @@ enableEmoji = true
 [services]
   [services.googleAnalytics]
     ID = ""
-    
+
 [params.homeInfoParams]
   Title = "HVAC-Vibe"
   Content = "Embedded systems, passive SAW sensing, and IIoT monitoring"
@@ -34,3 +34,5 @@ enableEmoji = true
 
 [markup.highlight]
   noClasses = false
+[pagination]
+  pagerSize = 10
