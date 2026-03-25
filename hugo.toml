@@ -17,6 +17,10 @@ enableEmoji = true
   ShowShareButtons = false
   defaultTheme = "auto"
 
+[services]
+  [services.googleAnalytics]
+    ID = ""
+    
 [params.homeInfoParams]
   Title = "HVAC-Vibe"
   Content = "Embedded systems, passive SAW sensing, and IIoT monitoring"
