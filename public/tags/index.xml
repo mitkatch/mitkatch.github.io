@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Tags on HVAC-Vibe</title>
+    <link>http://localhost:1313/tags/</link>
+    <description>Recent content in Tags on HVAC-Vibe</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 25 Mar 2026 10:00:00 -0500</lastBuildDate>
+    <atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Nrf52840</title>
+      <link>http://localhost:1313/tags/nrf52840/</link>
+      <pubDate>Wed, 25 Mar 2026 10:00:00 -0500</pubDate>
+      <guid>http://localhost:1313/tags/nrf52840/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Zephyr</title>
+      <link>http://localhost:1313/tags/zephyr/</link>
+      <pubDate>Wed, 25 Mar 2026 10:00:00 -0500</pubDate>
+      <guid>http://localhost:1313/tags/zephyr/</guid>
+      <description></description>
+    </item>
+  </channel>
+</rss>

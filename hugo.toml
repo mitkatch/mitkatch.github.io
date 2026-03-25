@@ -1,0 +1,23 @@
+baseURL = "https://mitkatch.github.io/"
+languageCode = "en-us"
+title = "HVAC-Vibe"
+theme = "PaperMod"
+paginate = 10
+
+[params]
+  description = "Embedded systems, IIoT, and hardware engineering"
+  author = "Mikhail"
+  ShowReadingTime = true
+  ShowCodeCopyButtons = true
+  ShowPostNavLinks = true
+
+[params.homeInfoParams]
+  Title = "HVAC-Vibe"
+  Content = "Embedded systems, passive SAW sensing, and IIoT monitoring"
+
+[[params.socialIcons]]
+  name = "github"
+  url = "https://github.com/mitkatch"
+
+[markup.goldmark.renderer]
+  unsafe = true
