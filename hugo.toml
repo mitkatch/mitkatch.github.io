@@ -4,12 +4,18 @@ title = "HVAC-Vibe"
 theme = "PaperMod"
 paginate = 10
 
+enableRobotsTXT = true
+enableEmoji = true
+
 [params]
   description = "Embedded systems, IIoT, and hardware engineering"
   author = "Mikhail"
   ShowReadingTime = true
   ShowCodeCopyButtons = true
   ShowPostNavLinks = true
+  ShowBreadCrumbs = true
+  ShowShareButtons = false
+  defaultTheme = "auto"
 
 [params.homeInfoParams]
   Title = "HVAC-Vibe"
@@ -21,3 +27,6 @@ paginate = 10
 
 [markup.goldmark.renderer]
   unsafe = true
+
+[markup.highlight]
+  noClasses = false
