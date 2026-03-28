@@ -33,7 +33,11 @@ enableEmoji = true
   unsafe = true
 
 [markup.highlight]
-  noClasses = false
+  noClasses = true
+  style = "monokai"
+  codeFences = true
+  guessSyntax = true
+
 [pagination]
   pagerSize = 10
 
