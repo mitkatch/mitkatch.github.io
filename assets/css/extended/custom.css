@@ -1,13 +1,32 @@
-/* Tighten code block font size — default is too large for short single-line blocks */
-.post-content pre,
-.post-content pre code {
-    font-size: 13px;
-    line-height: 1.6;
+.post-content pre {
+  overflow-x: auto;
+  white-space: pre;
 }
 
-/* Inline code (backtick) — keep it readable but not oversized */
-.post-content code {
-    font-size: 13px;
-    padding: 2px 6px;
-    border-radius: 4px;
+.post-content pre,
+.post-content pre code {
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+/* Add to hugo.yaml:
+markup:
+  highlight:
+    noClasses: true
+    style: monokai
+*/
+
+.post-content code:not(pre code) {
+  background: var(--code-bg, rgba(110,118,129,.15));
+  border-radius: 4px;
+  padding: .15em .45em;
+  font-size: .875em;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.post-content pre::-webkit-scrollbar { height: 6px; }
+.post-content pre::-webkit-scrollbar-thumb {
+  background: rgba(128,128,128,.3);
+  border-radius: 3px;
 }

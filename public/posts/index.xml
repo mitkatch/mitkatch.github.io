@@ -15,12 +15,5 @@
       <guid>http://localhost:1313/posts/wifi-provisioning-post/</guid>
       <description>Every tutorial assumes Raspbian and wpa_supplicant. This one doesn&amp;#39;t. A complete guide to headless WiFi provisioning on Ubuntu cloud-init with NetworkManager, hostapd, and dnsmasq — including every failure mode I hit.</description>
     </item>
-    <item>
-      <title>First Post</title>
-      <link>http://localhost:1313/posts/firts-post/</link>
-      <pubDate>Wed, 25 Mar 2026 10:00:00 -0500</pubDate>
-      <guid>http://localhost:1313/posts/firts-post/</guid>
-      <description>&lt;p&gt;Testing the site. More content coming.&lt;/p&gt;</description>
-    </item>
   </channel>
 </rss>

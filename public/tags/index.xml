@@ -50,19 +50,5 @@
       <guid>http://localhost:1313/tags/ubuntu/</guid>
       <description></description>
     </item>
-    <item>
-      <title>Nrf52840</title>
-      <link>http://localhost:1313/tags/nrf52840/</link>
-      <pubDate>Wed, 25 Mar 2026 10:00:00 -0500</pubDate>
-      <guid>http://localhost:1313/tags/nrf52840/</guid>
-      <description></description>
-    </item>
-    <item>
-      <title>Zephyr</title>
-      <link>http://localhost:1313/tags/zephyr/</link>
-      <pubDate>Wed, 25 Mar 2026 10:00:00 -0500</pubDate>
-      <guid>http://localhost:1313/tags/zephyr/</guid>
-      <description></description>
-    </item>
   </channel>
 </rss>
