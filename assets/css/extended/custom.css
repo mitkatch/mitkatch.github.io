@@ -1,0 +1,13 @@
+/* Tighten code block font size — default is too large for short single-line blocks */
+.post-content pre,
+.post-content pre code {
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* Inline code (backtick) — keep it readable but not oversized */
+.post-content code {
+    font-size: 13px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
