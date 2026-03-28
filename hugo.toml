@@ -36,3 +36,13 @@ enableEmoji = true
   noClasses = false
 [pagination]
   pagerSize = 10
+
+[[menu.main]]
+  name = "Architecture"
+  url = "/architecture/"
+  weight = 10
+
+[[menu.main]]
+  name = "Posts"
+  url = "/posts/"
+  weight = 20
