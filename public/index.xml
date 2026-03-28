@@ -6,8 +6,27 @@
     <description>Recent content on HVAC-Vibe</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 25 Mar 2026 10:00:00 -0500</lastBuildDate>
+    <lastBuildDate>Fri, 27 Mar 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>HVAC-Vibe Architecture</title>
+      <link>http://localhost:1313/architecture/</link>
+      <pubDate>Fri, 27 Mar 2026 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/architecture/</guid>
+      <description>&lt;iframe src=&#34;http://localhost:1313/hvac-vibe-architecture.html&#34;
+        width=&#34;100%&#34;
+        height=&#34;850px&#34;
+        frameborder=&#34;0&#34;
+        style=&#34;border:none;border-radius:8px;&#34;&gt;
+&lt;/iframe&gt;</description>
+    </item>
+    <item>
+      <title>WiFi Provisioning on Raspberry Pi Zero 2W with Ubuntu — The NetworkManager Way</title>
+      <link>http://localhost:1313/posts/wifi-provisioning-post/</link>
+      <pubDate>Fri, 27 Mar 2026 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/wifi-provisioning-post/</guid>
+      <description>Every tutorial assumes Raspbian and wpa_supplicant. This one doesn&amp;#39;t. A complete guide to headless WiFi provisioning on Ubuntu cloud-init with NetworkManager, hostapd, and dnsmasq — including every failure mode I hit.</description>
+    </item>
     <item>
       <title>First Post</title>
       <link>http://localhost:1313/posts/firts-post/</link>

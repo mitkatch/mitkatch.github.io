@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>WiFi Provisioning on Raspberry Pi Zero 2W with Ubuntu — The NetworkManager Way | HVAC-Vibe</title>
+<meta name="keywords" content="raspberry-pi, ubuntu, networkmanager, hostapd, linux, hvac-vibe">
+<meta name="description" content="Every tutorial assumes Raspbian and wpa_supplicant. This one doesn&#39;t. A complete guide to headless WiFi provisioning on Ubuntu cloud-init with NetworkManager, hostapd, and dnsmasq — including every failure mode I hit.">
+<meta name="author" content="Mikhail">
+<link rel="canonical" href="http://localhost:1313/posts/wifi-provisioning-post/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.da3211e5ef867bf2b75fd5a6515cfed7195c011e8ab735694e203810a827097b.css" integrity="sha256-2jIR5e&#43;Ge/K3X9WmUVz&#43;1xlcAR6KtzVpTiA4EKgnCXs=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/wifi-provisioning-post/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+                color-scheme: dark;
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .toc {
+                background: var(--entry);
+            }
+        }
+
+        @media (prefers-color-scheme: light) {
+            .list::-webkit-scrollbar-thumb {
+                border-color: var(--code-bg);
+            }
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else if (localStorage.getItem("pref-theme") === "light") {
+       document.querySelector("html").dataset.theme = 'light';
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else {
+        document.querySelector("html").dataset.theme = 'light';
+    }
+
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:1313/" accesskey="h" title="HVAC-Vibe (Alt + H)">HVAC-Vibe</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:1313/architecture/" title="Architecture">
+                    <span>Architecture</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="http://localhost:1313/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:1313/posts/">Posts</a></div>
+    <h1 class="post-title entry-hint-parent">
+      WiFi Provisioning on Raspberry Pi Zero 2W with Ubuntu — The NetworkManager Way
+    </h1>
+    <div class="post-description">
+      Every tutorial assumes Raspbian and wpa_supplicant. This one doesn&#39;t. A complete guide to headless WiFi provisioning on Ubuntu cloud-init with NetworkManager, hostapd, and dnsmasq — including every failure mode I hit.
+    </div>
+    <div class="post-meta"><span title='2026-03-27 00:00:00 +0000 UTC'>March 27, 2026</span>&nbsp;·&nbsp;<span>13 min</span>&nbsp;·&nbsp;<span>Mikhail</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p>The HVAC-Vibe gateway is a headless Raspberry Pi Zero 2W. No screen, no keyboard, no
+ethernet. It needs to join a customer&rsquo;s WiFi network on first boot without any manual
+SSH configuration. The standard solution is a captive portal: Pi broadcasts its own
+access point, user connects their phone, picks a network, enters a password, Pi joins
+it and starts working.</p>
+<p>Every tutorial I found assumed Raspbian and <code>wpa_supplicant</code>. My image is Ubuntu
+cloud-init with NetworkManager. Completely different tools, different behavior, and
+every one of those tutorials silently fails in ways that are hard to debug on a headless
+device.</p>
+<p>This post documents what actually works — including ten specific failure modes I hit
+and how I resolved each one.</p>
+<hr>
+<h2 id="the-setup">The Setup<a hidden class="anchor" aria-hidden="true" href="#the-setup">#</a></h2>
+<p><strong>Hardware:</strong> Raspberry Pi Zero 2W<br>
+<strong>OS:</strong> Ubuntu 22.04 cloud-init (not Raspbian)<br>
+<strong>Network manager:</strong> NetworkManager (<code>nmcli</code>) — not <code>wpa_supplicant</code><br>
+<strong>Goal:</strong> On first boot, Pi broadcasts <code>HVAC-Vibe-Setup</code> AP → user connects phone →
+picks their network from a list → enters password → Pi joins that network →
+normal operation starts</p>
+<p>The key distinction upfront: <strong>if you are running Raspbian, this post is not for you.</strong>
+Raspbian uses <code>wpa_supplicant</code> and <code>dhcpcd</code>. Ubuntu server images use NetworkManager.
+They are not interchangeable. Commands that work on one fail silently on the other.</p>
+<hr>
+<h2 id="why-ubuntu-instead-of-raspbian">Why Ubuntu Instead of Raspbian<a hidden class="anchor" aria-hidden="true" href="#why-ubuntu-instead-of-raspbian">#</a></h2>
+<p>Ubuntu cloud-init gives you a few things that matter for a deployed IoT device:</p>
+<ul>
+<li><code>cloud-init</code> handles first-boot WiFi configuration via <code>/boot/firmware/network-config</code>
+— a YAML file writable from Windows without any Linux tools</li>
+<li>NetworkManager handles reconnection, profile persistence, and interface state more
+robustly than <code>wpa_supplicant</code> for long-running unattended devices</li>
+<li>The same provisioning approach works on any Ubuntu ARM device, not just Pi</li>
+</ul>
+<p>The tradeoff: almost no maker tutorials target it, so you&rsquo;re on your own when things
+break.</p>
+<hr>
+<h2 id="architecture">Architecture<a hidden class="anchor" aria-hidden="true" href="#architecture">#</a></h2>
+<p>The provisioning flow looks like this:</p>
+<pre tabindex="0"><code>Boot
+ └── hvac-setup.service starts
+      └── needs_setup()?
+           ├── NO  → show IP on display, exit
+           │         hvac-engine starts normally
+           └── YES → scan WiFi (while NM owns wlan0)
+                     start AP (hostapd + dnsmasq)
+                     start Flask web server
+                     show QR code on display
+                     user connects phone, picks network
+                     stop AP, hand wlan0 back to NM
+                     connect via nmcli
+                     mark setup done
+                     hvac-engine starts
+</code></pre><p>A few design decisions worth explaining:</p>
+<p><strong>Why pre-scan before starting the AP?</strong> Once <code>wlan0</code> switches to AP mode it can no
+longer scan for client networks — the radio can only do one thing at a time. Scan
+first, cache the results, show them in the browser. This is non-obvious and most
+tutorials skip it.</p>
+<p><strong>Why hostapd + dnsmasq instead of NetworkManager&rsquo;s AP mode?</strong> NetworkManager can
+create a hotspot, but releasing the interface back to client mode afterward is
+unreliable in testing. hostapd gives explicit control over when the AP starts and
+stops.</p>
+<p><strong>Why Flask?</strong> A simple HTTP server would work for serving the page, but Flask makes
+handling the form POST (network selection + password submission) and running the
+connection logic in a background thread straightforward.</p>
+<hr>
+<h2 id="prerequisites">Prerequisites<a hidden class="anchor" aria-hidden="true" href="#prerequisites">#</a></h2>
+<p>Install the required packages:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo apt update
+</span></span><span class="line"><span class="cl">sudo apt install hostapd dnsmasq python3-flask python3-qrcode network-manager
+</span></span></code></pre></div><p>Disable the system dnsmasq service — it binds to port 67 (DHCP) on startup and
+blocks our instance from starting:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo systemctl disable dnsmasq
+</span></span><span class="line"><span class="cl">sudo systemctl stop dnsmasq
+</span></span></code></pre></div><p>This is not optional. If system dnsmasq is running when you start your own instance,
+you get <code>Address already in use</code> on port 67 and DHCP never works — phones connect
+to the AP but get no IP address and show a spinner indefinitely.</p>
+<hr>
+<h2 id="set-up-the-usb-serial-console-first--before-anything-else">Set Up the USB Serial Console First — Before Anything Else<a hidden class="anchor" aria-hidden="true" href="#set-up-the-usb-serial-console-first--before-anything-else">#</a></h2>
+<p>Before touching any WiFi configuration, set up the USB serial console and verify
+it works. This is not optional and it is not a recovery-only tool — it is your
+primary debugging interface throughout development.</p>
+<p>A headless Pi with broken WiFi is completely inaccessible without an out-of-band
+console. I learned this the hard way: the COM port saved the project multiple times
+when WiFi provisioning was stuck in a broken state with no way to SSH in and no
+display output that explained what was wrong.</p>
+<p>Set it up first, test it works, then proceed. You will thank yourself later.</p>
+<h3 id="how-it-works">How It Works<a hidden class="anchor" aria-hidden="true" href="#how-it-works">#</a></h3>
+<p>The Pi Zero 2W micro USB data port supports USB gadget mode. When enabled, the Pi
+presents itself to a connected Windows or Mac machine as a USB serial (COM) port.
+You connect with any terminal emulator — PuTTY on Windows — and get a full Linux
+console regardless of network state.</p>
+<p>This works even when:</p>
+<ul>
+<li>WiFi is completely broken</li>
+<li>The provisioning script crashed</li>
+<li>NetworkManager is in an unknown state</li>
+<li>The display shows nothing useful</li>
+</ul>
+<h3 id="enable-usb-serial-gadget">Enable USB Serial Gadget<a hidden class="anchor" aria-hidden="true" href="#enable-usb-serial-gadget">#</a></h3>
+<p>These files are on the FAT32 boot partition — writable directly from Windows
+before ever booting the Pi, or from the Pi itself after first boot.</p>
+<p><strong>Edit <code>/boot/firmware/config.txt</code></strong> — add this line at the end:</p>
+<pre tabindex="0"><code>dtoverlay=dwc2
+</code></pre><p><strong>Edit <code>/boot/firmware/cmdline.txt</code></strong> — this file is a single long line.
+Find <code>rootwait</code> and add <code>modules-load=dwc2,g_serial</code> immediately after it,
+separated by a space:</p>
+<pre tabindex="0"><code>... rootwait modules-load=dwc2,g_serial quiet ...
+</code></pre><p>Do not add a newline — the entire file must remain one line. Adding a newline
+here causes a boot failure that looks completely unrelated.</p>
+<p><strong>Enable the getty service</strong> — run this on the Pi:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo systemctl <span class="nb">enable</span> getty@ttyGS0.service
+</span></span><span class="line"><span class="cl">sudo systemctl start getty@ttyGS0.service
+</span></span></code></pre></div><p>Reboot:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo reboot
+</span></span></code></pre></div><h3 id="connect-from-windows">Connect from Windows<a hidden class="anchor" aria-hidden="true" href="#connect-from-windows">#</a></h3>
+<p>Connect the micro USB cable to the <strong>data port</strong> on the Pi Zero 2W — not the
+power port. The Pi Zero 2W has two micro USB ports: one labelled PWR (power only)
+and one labelled USB (data + power). Use the data port.</p>
+<p>Open <strong>Device Manager</strong> on Windows. Under <strong>Ports (COM &amp; LPT)</strong> you should see
+a new entry appear — something like <code>USB Serial Device (COM3)</code>. Note the COM
+number.</p>
+<p>If nothing appears under Ports, look for an unknown device — you may need to
+install a driver. On Windows 10/11 it usually installs automatically.</p>
+<p>Open <strong>PuTTY</strong>:</p>
+<ul>
+<li>Connection type: <strong>Serial</strong></li>
+<li>Serial line: <code>COM3</code> (use your actual COM number)</li>
+<li>Speed: <code>115200</code></li>
+<li>Click Open</li>
+</ul>
+<p>You should see a Linux login prompt. Log in with your Ubuntu credentials.</p>
+<h3 id="verify-it-works">Verify It Works<a hidden class="anchor" aria-hidden="true" href="#verify-it-works">#</a></h3>
+<p>Once connected, run a quick test to confirm the console is fully functional:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Check network state</span>
+</span></span><span class="line"><span class="cl">nmcli dev status
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Check systemd services</span>
+</span></span><span class="line"><span class="cl">systemctl status hvac-setup.service
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Watch live logs</span>
+</span></span><span class="line"><span class="cl">journalctl -f
+</span></span></code></pre></div><p>The <code>journalctl -f</code> command is your most important debugging tool — it streams
+all system logs in real time. When your provisioning script runs and something
+goes wrong, the exact error appears here immediately. Without this you are
+guessing.</p>
+<h3 id="one-gotcha-power">One Gotcha: Power<a hidden class="anchor" aria-hidden="true" href="#one-gotcha-power">#</a></h3>
+<p>The Pi Zero 2W draws enough current during WiFi activity that some USB hubs and
+laptop ports can&rsquo;t supply enough power reliably. If the Pi resets unexpectedly
+during WiFi operations, power is the first thing to check. Use a dedicated USB
+port directly on your machine, not a hub, and use a quality cable.</p>
+<hr>
+<h2 id="step-1-scan-networks-before-touching-the-ap">Step 1: Scan Networks Before Touching the AP<a hidden class="anchor" aria-hidden="true" href="#step-1-scan-networks-before-touching-the-ap">#</a></h2>
+<p>This must happen while NetworkManager still owns <code>wlan0</code> — before any AP setup.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Force a fresh scan</span>
+</span></span><span class="line"><span class="cl">nmcli dev wifi rescan
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># List visible networks with signal strength</span>
+</span></span><span class="line"><span class="cl">nmcli -t -f SSID,SIGNAL,SECURITY dev wifi list
+</span></span></code></pre></div><p>Cache these results. Once you start hostapd, <code>wlan0</code> is in AP mode and these commands
+return nothing.</p>
+<hr>
+<h2 id="step-2-release-wlan0-from-networkmanager">Step 2: Release wlan0 from NetworkManager<a hidden class="anchor" aria-hidden="true" href="#step-2-release-wlan0-from-networkmanager">#</a></h2>
+<p>This is the step every Raspbian tutorial omits because it doesn&rsquo;t apply there.
+NetworkManager actively manages <code>wlan0</code> in client mode. If you start hostapd without
+releasing the interface first, NM and hostapd fight over it. The AP may appear to
+start but phones can&rsquo;t see it, or they see it but can&rsquo;t connect.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Disconnect from any current network</span>
+</span></span><span class="line"><span class="cl">sudo nmcli dev disconnect wlan0
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Tell NetworkManager to stop managing this interface entirely</span>
+</span></span><span class="line"><span class="cl">sudo nmcli dev <span class="nb">set</span> wlan0 managed no
+</span></span></code></pre></div><p>Verify it worked:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">nmcli dev status
+</span></span><span class="line"><span class="cl"><span class="c1"># wlan0 should show: unmanaged</span>
+</span></span></code></pre></div><hr>
+<h2 id="step-3-assign-a-static-ip-to-wlan0">Step 3: Assign a Static IP to wlan0<a hidden class="anchor" aria-hidden="true" href="#step-3-assign-a-static-ip-to-wlan0">#</a></h2>
+<p>hostapd handles the AP radio but doesn&rsquo;t assign an IP. You need one so dnsmasq
+can serve DHCP leases from a known address:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo ip addr flush dev wlan0
+</span></span><span class="line"><span class="cl">sudo ip addr add 192.168.4.1/24 dev wlan0
+</span></span><span class="line"><span class="cl">sudo ip link <span class="nb">set</span> wlan0 up
+</span></span></code></pre></div><hr>
+<h2 id="step-4-start-hostapd">Step 4: Start hostapd<a hidden class="anchor" aria-hidden="true" href="#step-4-start-hostapd">#</a></h2>
+<p>Create a minimal hostapd config at <code>/tmp/hostapd.conf</code>:</p>
+<pre tabindex="0"><code>interface=wlan0
+driver=nl80211
+ssid=HVAC-Vibe-Setup
+hw_mode=g
+channel=6
+wpa=0
+</code></pre><p><code>wpa=0</code> means open network — no password on the setup AP. Acceptable since it&rsquo;s
+temporary and serves only a provisioning page.</p>
+<p>Start it:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo hostapd -B /tmp/hostapd.conf
+</span></span></code></pre></div><p><strong>Important:</strong> Wait 2 seconds before starting dnsmasq. hostapd needs time to fully
+initialize the interface before dnsmasq can bind to it. If dnsmasq starts too early
+it fails silently and phones get no DHCP lease.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sleep <span class="m">2</span>
+</span></span></code></pre></div><hr>
+<h2 id="step-5-start-dnsmasq">Step 5: Start dnsmasq<a hidden class="anchor" aria-hidden="true" href="#step-5-start-dnsmasq">#</a></h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo dnsmasq <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --no-daemon <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --interface<span class="o">=</span>wlan0 <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --dhcp-range<span class="o">=</span>192.168.4.2,192.168.4.20,255.255.255.0,24h <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --address<span class="o">=</span>/#/192.168.4.1 <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --log-queries <span class="p">&amp;</span>
+</span></span></code></pre></div><p>The <code>--address=/#/192.168.4.1</code> line redirects all DNS queries to the Pi&rsquo;s IP —
+this is what makes it a captive portal. Any domain a phone tries to look up resolves
+to 192.168.4.1, which triggers the captive portal detection on iOS and Android
+and pops up the provisioning page automatically.</p>
+<p>At this point:</p>
+<ul>
+<li><code>HVAC-Vibe-Setup</code> is visible on a phone</li>
+<li>Connecting gives the phone an IP in the 192.168.4.x range</li>
+<li>Opening any URL redirects to your Flask server</li>
+</ul>
+<hr>
+<h2 id="step-6-stop-the-ap-and-hand-wlan0-back">Step 6: Stop the AP and Hand wlan0 Back<a hidden class="anchor" aria-hidden="true" href="#step-6-stop-the-ap-and-hand-wlan0-back">#</a></h2>
+<p>When the user submits their network credentials, you need to tear down the AP
+before NM can use <code>wlan0</code> as a client again.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Kill AP processes</span>
+</span></span><span class="line"><span class="cl">sudo pkill hostapd
+</span></span><span class="line"><span class="cl">sleep <span class="m">2</span>
+</span></span><span class="line"><span class="cl">sudo pkill dnsmasq
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Flush the static IP</span>
+</span></span><span class="line"><span class="cl">sudo ip addr flush dev wlan0
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Return interface to NetworkManager</span>
+</span></span><span class="line"><span class="cl">sudo nmcli dev <span class="nb">set</span> wlan0 managed yes
+</span></span></code></pre></div><p><strong>The tricky part:</strong> NM doesn&rsquo;t immediately process the <code>managed yes</code> command.
+You must poll until it confirms the interface is managed before proceeding:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Poll until wlan0 is no longer unmanaged</span>
+</span></span><span class="line"><span class="cl"><span class="k">for</span> i in <span class="k">$(</span>seq <span class="m">1</span> 20<span class="k">)</span><span class="p">;</span> <span class="k">do</span>
+</span></span><span class="line"><span class="cl">    <span class="nv">STATE</span><span class="o">=</span><span class="k">$(</span>nmcli -t -f DEVICE,STATE dev status <span class="p">|</span> grep <span class="s2">&#34;^wlan0&#34;</span> <span class="p">|</span> cut -d: -f2<span class="k">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$STATE</span><span class="s2">&#34;</span> !<span class="o">=</span> <span class="s2">&#34;unmanaged&#34;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+</span></span><span class="line"><span class="cl">        <span class="nb">echo</span> <span class="s2">&#34;wlan0 is now: </span><span class="nv">$STATE</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">        <span class="nb">break</span>
+</span></span><span class="line"><span class="cl">    <span class="k">fi</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">echo</span> <span class="s2">&#34;Waiting for NM to take over wlan0... (</span><span class="nv">$i</span><span class="s2">/20)&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># Retry the managed command every 5 seconds</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="o">[</span> <span class="k">$((</span>i <span class="o">%</span> <span class="m">5</span><span class="k">))</span> -eq <span class="m">0</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+</span></span><span class="line"><span class="cl">        sudo nmcli dev <span class="nb">set</span> wlan0 managed yes
+</span></span><span class="line"><span class="cl">    <span class="k">fi</span>
+</span></span><span class="line"><span class="cl">    sleep <span class="m">1</span>
+</span></span><span class="line"><span class="cl"><span class="k">done</span>
+</span></span></code></pre></div><p>Skipping this poll is the cause of the most frustrating failure mode: NM is given
+the interface back but hasn&rsquo;t finished processing it. The next <code>nmcli</code> command
+runs against an interface NM thinks is still unmanaged. The command silently fails
+or returns &ldquo;No network with SSID found&rdquo; even when the network is clearly visible.</p>
+<hr>
+<h2 id="step-7-connect-to-the-target-network">Step 7: Connect to the Target Network<a hidden class="anchor" aria-hidden="true" href="#step-7-connect-to-the-target-network">#</a></h2>
+<p>After the AP is down and NM owns <code>wlan0</code> again, wait 5 seconds for the radio to
+reinitialize in client mode, then rescan:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sleep <span class="m">5</span>
+</span></span><span class="line"><span class="cl">nmcli dev wifi rescan
+</span></span></code></pre></div><p>Verify the target SSID is visible before attempting connection:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">nmcli -t -f SSID dev wifi list <span class="p">|</span> grep <span class="s2">&#34;^</span><span class="si">${</span><span class="nv">TARGET_SSID</span><span class="si">}</span>$<span class="s2">&#34;</span>
+</span></span></code></pre></div><p>If it&rsquo;s not visible yet, retry up to 4 times with 5 second gaps. The radio needs
+time after switching from AP mode.</p>
+<p><strong>Do not use <code>nmcli dev wifi connect</code></strong> — it is unreliable without a pre-existing
+connection profile for the SSID. It fails with &ldquo;No network with SSID found&rdquo; or
+&ldquo;key-mgmt property missing&rdquo; depending on the NM version.</p>
+<p>Use <code>nmcli con add</code> + <code>nmcli con up</code> instead. This explicitly creates a profile
+with the correct security settings:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Create the connection profile</span>
+</span></span><span class="line"><span class="cl">sudo nmcli con add <span class="se">\
+</span></span></span><span class="line"><span class="cl">    <span class="nb">type</span> wifi <span class="se">\
+</span></span></span><span class="line"><span class="cl">    con-name <span class="s2">&#34;hvac-setup-</span><span class="si">${</span><span class="nv">TARGET_SSID</span><span class="si">}</span><span class="s2">&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">    ifname wlan0 <span class="se">\
+</span></span></span><span class="line"><span class="cl">    ssid <span class="s2">&#34;</span><span class="si">${</span><span class="nv">TARGET_SSID</span><span class="si">}</span><span class="s2">&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">    wifi-sec.key-mgmt wpa-psk <span class="se">\
+</span></span></span><span class="line"><span class="cl">    wifi-sec.psk <span class="s2">&#34;</span><span class="si">${</span><span class="nv">PASSWORD</span><span class="si">}</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Bring it up</span>
+</span></span><span class="line"><span class="cl">sudo nmcli con up <span class="s2">&#34;hvac-setup-</span><span class="si">${</span><span class="nv">TARGET_SSID</span><span class="si">}</span><span class="s2">&#34;</span>
+</span></span></code></pre></div><p>The <code>con-name</code> prefix <code>hvac-setup-</code> ensures our profiles never conflict with any
+existing NM profiles for the same network.</p>
+<hr>
+<h2 id="step-8-verify-connection-and-get-ip">Step 8: Verify Connection and Get IP<a hidden class="anchor" aria-hidden="true" href="#step-8-verify-connection-and-get-ip">#</a></h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Wait for IP assignment (up to 30 seconds)</span>
+</span></span><span class="line"><span class="cl"><span class="k">for</span> i in <span class="k">$(</span>seq <span class="m">1</span> 30<span class="k">)</span><span class="p">;</span> <span class="k">do</span>
+</span></span><span class="line"><span class="cl">    <span class="nv">IP</span><span class="o">=</span><span class="k">$(</span>nmcli -t -f IP4.ADDRESS dev show wlan0 <span class="p">|</span> cut -d: -f2 <span class="p">|</span> cut -d/ -f1<span class="k">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="o">[</span> -n <span class="s2">&#34;</span><span class="nv">$IP</span><span class="s2">&#34;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+</span></span><span class="line"><span class="cl">        <span class="nb">echo</span> <span class="s2">&#34;Connected: </span><span class="nv">$IP</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">        <span class="nb">break</span>
+</span></span><span class="line"><span class="cl">    <span class="k">fi</span>
+</span></span><span class="line"><span class="cl">    sleep <span class="m">1</span>
+</span></span><span class="line"><span class="cl"><span class="k">done</span>
+</span></span></code></pre></div><p>Once you have an IP, write it to the cloud-init network config so it persists
+across reboots:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Store hashed password (never store plaintext)</span>
+</span></span><span class="line"><span class="cl"><span class="nv">HASH</span><span class="o">=</span><span class="k">$(</span>wpa_passphrase <span class="s2">&#34;</span><span class="si">${</span><span class="nv">TARGET_SSID</span><span class="si">}</span><span class="s2">&#34;</span> <span class="s2">&#34;</span><span class="si">${</span><span class="nv">PASSWORD</span><span class="si">}</span><span class="s2">&#34;</span> <span class="p">|</span> grep -v <span class="s2">&#34;#psk&#34;</span> <span class="p">|</span> grep <span class="s2">&#34;psk=&#34;</span> <span class="p">|</span> cut -d<span class="o">=</span> -f2<span class="k">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">cat &gt; /boot/firmware/network-config <span class="s">&lt;&lt; EOF
+</span></span></span><span class="line"><span class="cl"><span class="s">version: 2
+</span></span></span><span class="line"><span class="cl"><span class="s">wifis:
+</span></span></span><span class="line"><span class="cl"><span class="s">  wlan0:
+</span></span></span><span class="line"><span class="cl"><span class="s">    dhcp4: true
+</span></span></span><span class="line"><span class="cl"><span class="s">    access-points:
+</span></span></span><span class="line"><span class="cl"><span class="s">      &#34;${TARGET_SSID}&#34;:
+</span></span></span><span class="line"><span class="cl"><span class="s">        password: &#34;${HASH}&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s">EOF</span>
+</span></span></code></pre></div><p>Mark setup as complete:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo mkdir -p /etc/hvac-vibe
+</span></span><span class="line"><span class="cl">sudo touch /etc/hvac-vibe/wifi-configured
+</span></span></code></pre></div><hr>
+<h2 id="recovery-mechanisms">Recovery Mechanisms<a hidden class="anchor" aria-hidden="true" href="#recovery-mechanisms">#</a></h2>
+<p>A headless device needs recovery paths that don&rsquo;t require network access.</p>
+<p><strong>SD card triggers</strong> — create empty files on the <code>/boot/firmware</code> partition
+(FAT32, writable from Windows Explorer or Mac Finder without any tools):</p>
+<pre tabindex="0"><code>hvac-reset-wifi    → forces setup UI on next boot
+hvac-restore-wifi  → restores factory WiFi config silently
+</code></pre><p>On Windows:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="c"># Insert SD card, E: is the boot partition</span>
+</span></span><span class="line"><span class="cl"><span class="nb">New-Item</span> <span class="n">E:</span><span class="p">\</span><span class="nb">hvac-reset</span><span class="n">-wifi</span> <span class="n">-ItemType</span> <span class="n">File</span>
+</span></span></code></pre></div><p><strong>USB serial console</strong> — if you followed the setup section at the top of this post,
+this is already working. Connect the data USB port to Windows, open PuTTY on the
+COM port at 115200 baud, and you have a full console regardless of network state.
+This is the most reliable recovery path — use it first.</p>
+<p><strong>But the actual saver</strong> was restore.sh running on live COM connection every time need to back to my wifi:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="cp">#!/bin/bash
+</span></span></span><span class="line"><span class="cl"><span class="nb">echo</span> Delete ALL home-wifi duplicates first
+</span></span><span class="line"><span class="cl">nmcli con show <span class="p">|</span> grep <span class="s2">&#34;home-wifi&#34;</span> <span class="p">|</span> awk <span class="s1">&#39;{print $2}&#39;</span> <span class="p">|</span> <span class="k">while</span> <span class="nb">read</span> uuid<span class="p">;</span> <span class="k">do</span>
+</span></span><span class="line"><span class="cl">     sudo nmcli con delete <span class="s2">&#34;</span><span class="nv">$uuid</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">     <span class="nb">echo</span> delete <span class="s2">&#34;</span><span class="nv">$uuid</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="k">done</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#</span>
+</span></span><span class="line"><span class="cl"><span class="nb">echo</span> Return wlan0 to NM
+</span></span><span class="line"><span class="cl">sudo nmcli dev <span class="nb">set</span> wlan0 managed yes
+</span></span><span class="line"><span class="cl">sleep <span class="m">3</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#</span>
+</span></span><span class="line"><span class="cl"><span class="nb">echo</span> Add fresh profile
+</span></span><span class="line"><span class="cl">sudo nmcli con add <span class="se">\
+</span></span></span><span class="line"><span class="cl">   <span class="nb">type</span> wifi <span class="se">\
+</span></span></span><span class="line"><span class="cl">   ifname wlan0 <span class="se">\
+</span></span></span><span class="line"><span class="cl">   con-name <span class="s2">&#34;home-wifi&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">   ssid <span class="s2">&#34;YUOUR_WIFI_NETWORK&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">   wifi-sec.key-mgmt wpa-psk <span class="se">\
+</span></span></span><span class="line"><span class="cl">   wifi-sec.psk <span class="s2">&#34;YOUR_psk_generated&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#</span>
+</span></span><span class="line"><span class="cl">sudo nmcli con up <span class="s2">&#34;home-wifi&#34;</span>
+</span></span></code></pre></div><p>to generate your psk run and use only code ,like &ldquo;c6757**:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">wpa_passphrase <span class="s2">&#34;YOUR-WIFI&#34;</span> <span class="s2">&#34;your_text_password&#34;</span> <span class="p">|</span> grep -v <span class="s1">&#39;#&#39;</span> <span class="p">|</span> grep <span class="nv">psk</span><span class="o">=</span>
+</span></span></code></pre></div><hr>
+<h2 id="complete-sequence-reference">Complete Sequence Reference<a hidden class="anchor" aria-hidden="true" href="#complete-sequence-reference">#</a></h2>
+<pre tabindex="0"><code>1. scan_networks()           ← while NM owns wlan0, BEFORE AP
+2. pkill dnsmasq             ← kill any system instance
+3. nmcli dev disconnect wlan0
+4. nmcli dev set wlan0 managed no
+5. ip addr add 192.168.4.1/24 dev wlan0
+6. hostapd -B hostapd.conf
+7. sleep 2
+8. dnsmasq (with captive portal redirect)
+9. Flask serves provisioning page with cached network list
+
+--- user submits credentials ---
+
+10. pkill hostapd
+11. sleep 2
+12. pkill dnsmasq
+13. ip addr flush dev wlan0
+14. nmcli dev set wlan0 managed yes
+15. poll until not unmanaged (up to 20s, retry managed every 5s)
+16. sleep 5                  ← radio reinitialize
+17. nmcli dev wifi rescan
+18. retry until SSID visible (4x, 5s gaps)
+19. nmcli con add (explicit profile with wpa-psk)
+20. nmcli con up
+21. poll for IP
+22. write /boot/firmware/network-config
+23. touch /etc/hvac-vibe/wifi-configured
+24. systemd starts hvac-engine
+</code></pre><hr>
+<h2 id="what-i-learned">What I Learned<a hidden class="anchor" aria-hidden="true" href="#what-i-learned">#</a></h2>
+<ul>
+<li><strong>Ubuntu cloud-init uses NetworkManager, not wpa_supplicant.</strong> Every command that
+works in a Raspbian tutorial needs to be rewritten.</li>
+<li><strong>NM and hostapd fight over wlan0.</strong> You must explicitly release the interface
+before starting the AP and verify managed state is restored before connecting.</li>
+<li><strong><code>nmcli dev wifi connect</code> is unreliable.</strong> Use <code>con add</code> + <code>con up</code> with explicit
+security settings.</li>
+<li><strong>Scan before AP mode.</strong> The radio cannot be AP and client simultaneously.</li>
+<li><strong>Timing matters more than you expect.</strong> The <code>sleep 2</code> after hostapd, the <code>sleep 5</code>
+after AP teardown, the NM managed state poll — skipping any of these produces
+intermittent failures that are nearly impossible to debug on a headless device.</li>
+<li><strong>Set up the USB serial console before anything else.</strong> <code>journalctl -f</code> over a
+COM port is the only way to see what is actually happening on a headless device
+with broken WiFi. It saved this project multiple times. Do not skip it.</li>
+<li><strong>Always have multiple recovery paths.</strong> SD card trigger files, USB serial console,
+and a restore script — build all of them in before you need them.</li>
+</ul>
+<hr>
+<h2 id="full-implementation">Full Implementation<a hidden class="anchor" aria-hidden="true" href="#full-implementation">#</a></h2>
+<p>The complete Python implementation (Flask server, AP control, WiFi connection logic,
+display integration) is in the HVAC-Vibe repository:</p>
+<p><a href="https://github.com/mitkatch/hvacvibe-hub">github.com/mitkatch/hvacvibe-hub</a> — branch <code>pygame03</code>, directory <code>hvac-setup/</code></p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="http://localhost:1313/tags/raspberry-pi/">Raspberry-Pi</a></li>
+      <li><a href="http://localhost:1313/tags/ubuntu/">Ubuntu</a></li>
+      <li><a href="http://localhost:1313/tags/networkmanager/">Networkmanager</a></li>
+      <li><a href="http://localhost:1313/tags/hostapd/">Hostapd</a></li>
+      <li><a href="http://localhost:1313/tags/linux/">Linux</a></li>
+      <li><a href="http://localhost:1313/tags/hvac-vibe/">Hvac-Vibe</a></li>
+    </ul>
+<nav class="paginav">
+  <a class="next" href="http://localhost:1313/posts/firts-post/">
+    <span class="title">Next »</span>
+    <br>
+    <span>First Post</span>
+  </a>
+</nav>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2026 <a href="http://localhost:1313/">HVAC-Vibe</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

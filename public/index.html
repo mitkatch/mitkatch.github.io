@@ -103,6 +103,16 @@
             </div>
         </div>
         <ul id="menu">
+            <li>
+                <a href="http://localhost:1313/architecture/" title="Architecture">
+                    <span>Architecture</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
         </ul>
     </nav>
 </header>
@@ -128,6 +138,20 @@
 </div>
 
     </footer>
+</article>
+
+<article class="post-entry"> 
+  <header class="entry-header">
+    <h2 class="entry-hint-parent">WiFi Provisioning on Raspberry Pi Zero 2W with Ubuntu — The NetworkManager Way
+    </h2>
+  </header>
+  <div class="entry-content">
+    <p>The HVAC-Vibe gateway is a headless Raspberry Pi Zero 2W. No screen, no keyboard, no ethernet. It needs to join a customer’s WiFi network on first boot without any manual SSH configuration. The standard solution is a captive portal: Pi broadcasts its own access point, user connects their phone, picks a network, enters a password, Pi joins it and starts working.
+Every tutorial I found assumed Raspbian and wpa_supplicant. My image is Ubuntu cloud-init with NetworkManager. Completely different tools, different behavior, and every one of those tutorials silently fails in ways that are hard to debug on a headless device.
+...</p>
+  </div>
+  <footer class="entry-footer"><span title='2026-03-27 00:00:00 +0000 UTC'>March 27, 2026</span>&nbsp;·&nbsp;<span>13 min</span>&nbsp;·&nbsp;<span>Mikhail</span></footer>
+  <a class="entry-link" aria-label="post link to WiFi Provisioning on Raspberry Pi Zero 2W with Ubuntu — The NetworkManager Way" href="http://localhost:1313/posts/wifi-provisioning-post/"></a>
 </article>
 
 <article class="post-entry"> 

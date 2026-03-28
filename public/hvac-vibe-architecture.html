@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HVAC-Vibe — Sensor Node Architecture</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2128;
+    --border: #30363d;
+    --border2: #444c56;
+    --text: #e6edf3;
+    --muted: #7d8590;
+    --hint: #484f58;
+    --blue: #378ADD;
+    --blue-dim: #0c447c;
+    --green: #1D9E75;
+    --green-dim: #085041;
+    --purple: #7F77DD;
+    --purple-dim: #3C3489;
+    --pink: #D4537E;
+    --pink-dim: #72243E;
+    --amber: #BA7517;
+    --amber-dim: #633806;
+    --teal: #5DCAA5;
+    --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 4px;
+  }
+
+  .header-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+  }
+
+  .header-title {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--blue);
+  }
+
+  .header-subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .tab-bar {
+    display: flex;
+    gap: 2px;
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    padding: 8px 16px;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .tab:hover:not(.active) {
+    color: var(--text);
+    background: var(--surface2);
+  }
+
+  .tab.active {
+    color: var(--text);
+    background: var(--bg);
+    border-color: var(--border);
+    font-weight: 600;
+  }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 32px 60px;
+  }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+  }
+
+  .card-accent {
+    border-left: 3px solid;
+    border-radius: 0 8px 8px 0;
+  }
+
+  .grid2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+  }
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    gap: 12px;
+  }
+
+  .row:last-child { border-bottom: none; }
+  .row-label { color: var(--muted); }
+  .row-val { font-family: var(--mono); font-size: 12px; text-align: right; }
+
+  .mono { font-family: var(--mono); }
+
+  .code-block {
+    background: #010409;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #79c0ff;
+    line-height: 1.7;
+    white-space: pre;
+    overflow-x: auto;
+    margin-top: 10px;
+  }
+
+  .badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  .flow {
+    display: flex;
+    align-items: stretch;
+    gap: 4px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+
+  .flow-box {
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 14px 18px;
+    min-width: 150px;
+    flex: 1;
+  }
+
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    color: var(--hint);
+    font-size: 18px;
+    padding: 0 4px;
+  }
+
+  .flow-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+  }
+
+  .flow-item {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .flow-item::before { content: '→ '; color: var(--hint); }
+
+  .step-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    align-items: flex-start;
+  }
+
+  .step-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .step-num {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  .step-line {
+    width: 1px;
+    flex: 1;
+    background: var(--border);
+    margin: 4px 0;
+    min-height: 12px;
+  }
+
+  .step-card {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  .step-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .step-title {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .step-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+
+  table.spec {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  table.spec th {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  table.spec td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  table.spec tr:last-child td { border-bottom: none; }
+
+  table.spec tr.total td {
+    font-weight: 600;
+    background: var(--surface2);
+  }
+
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .bar-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    min-width: 80px;
+  }
+
+  .bar-track {
+    flex: 1;
+    background: var(--surface2);
+    border-radius: 4px;
+    height: 22px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    border-radius: 4px;
+    font-weight: 600;
+    min-width: 40px;
+  }
+
+  .note {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.65;
+    margin-top: 10px;
+  }
+
+  .highlight-box {
+    border: 1px solid;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-top: 16px;
+  }
+
+  .total-badge {
+    background: #1a1200;
+    color: var(--amber);
+    border: 1px solid var(--amber-dim);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 6px 18px;
+    border-radius: 20px;
+  }
+
+  @media (max-width: 600px) {
+    header { padding: 16px 16px 0; }
+    main { padding: 20px 16px 40px; }
+    .flow { flex-direction: column; }
+    .flow-arrow { transform: rotate(90deg); align-self: center; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <span class="header-eyebrow">HVAC-VIBE // SENSOR NODE</span>
+  </div>
+  <div class="header-title">nRF52840 + ADXL343 + BME280 — Architecture</div>
+  <div class="header-subtitle">On-device FFT · Feature extraction · BLE transport (LoRa future)</div>
+  <div class="tab-bar">
+    <div class="tab active" onclick="show('overview', this)">OVERVIEW</div>
+    <div class="tab" onclick="show('hardware', this)">HARDWARE</div>
+    <div class="tab" onclick="show('pipeline', this)">FIRMWARE PIPELINE</div>
+    <div class="tab" onclick="show('features', this)">FEATURES</div>
+    <div class="tab" onclick="show('power', this)">POWER BUDGET</div>
+    <div class="tab" onclick="show('packet', this)">PACKET DESIGN</div>
+  </div>
+</header>
+
+<main>
+
+<!-- OVERVIEW -->
+<div id="overview" class="section active">
+  <p style="color:var(--muted);max-width:680px;margin-bottom:28px;line-height:1.75;">
+    Self-contained vibration + environmental sensor node. All signal processing runs on the nRF52840 — only compact feature vectors leave the device. BLE transport today, LoRa tomorrow. The payload doesn't change between transports.
+  </p>
+
+  <div class="flow">
+    <div class="flow-box">
+      <div class="flow-title" style="color:var(--green);">SENSE</div>
+      <div class="flow-item">ADXL343 @ 1600 Hz</div>
+      <div class="flow-item">BME280 environmental</div>
+      <div class="flow-item">3-axis vibration</div>
+    </div>
+    <div class="flow-arrow">▶</div>
+    <div class="flow-box">
+      <div class="flow-title" style="color:var(--blue);">PROCESS</div>
+      <div class="flow-item">DMA ring buffer</div>
+      <div class="flow-item">Hanning window</div>
+      <div class="flow-item">CMSIS-DSP FFT</div>
+    </div>
+    <div class="flow-arrow">▶</div>
+    <div class="flow-box">
+      <div class="flow-title" style="color:var(--purple);">EXTRACT</div>
+      <div class="flow-item">Band energies (BPFO/BPFI/BSF/FTF)</div>
+      <div class="flow-item">RMS, kurtosis, crest factor</div>
+      <div class="flow-item">RPM from FFT interpolation</div>
+    </div>
+    <div class="flow-arrow">▶</div>
+    <div class="flow-box">
+      <div class="flow-title" style="color:var(--amber);">TRANSMIT</div>
+      <div class="flow-item">122-byte feature vector</div>
+      <div class="flow-item">BLE NUS (now)</div>
+      <div class="flow-item">LoRa SX1262 (future)</div>
+    </div>
+  </div>
+
+  <div class="label">KEY DESIGN DECISIONS</div>
+  <div class="grid2">
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:6px;color:var(--blue);">On-device FFT</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.65;">1024-pt FFT in ~2.4ms via CMSIS-DSP FPU. Physics-based features only — no ML on device. FFT computation is 20× faster with hardware FPU enabled.</div>
+    </div>
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:6px;color:var(--green);">Comm channel decoupled</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.65;">Feature vector payload is transport-agnostic. Only the FSM NOTIFYING state changes when swapping BLE for LoRa. SAMPLING and PROCESSING states untouched.</div>
+    </div>
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:6px;color:var(--purple);">RPM from FFT</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.65;">1× harmonic peak search within ±10% of nameplate RPM. Quadratic interpolation gives sub-bin accuracy (~±12 RPM). No Hall sensor required in field.</div>
+    </div>
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:6px;color:var(--pink);">Stats stay on Pi</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.65;">Trending, anomaly detection, ML inference live on Pi and cloud. nRF computes physics — Pi does statistics. Clean separation of concerns.</div>
+    </div>
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:6px;color:var(--amber);">FSM architecture preserved</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.65;">Table-driven FSM in fsm.c gains one new PROCESSING state between SAMPLING and NOTIFYING. Semaphore handoff from DMA ISR to FSM thread.</div>
+    </div>
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:6px;color:var(--teal);">Lock-free ring buffer</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.65;">Single-producer (DMA) single-consumer (FSM) pattern. No mutex needed — atomic pointer advances with memory barriers. Power-of-2 sizing for fast modulo.</div>
+    </div>
+  </div>
+</div>
+
+<!-- HARDWARE -->
+<div id="hardware" class="section">
+  <div class="label">COMPONENT SPECIFICATIONS</div>
+  <div class="grid2">
+    <div class="card card-accent" style="border-left-color:var(--blue);">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;">
+        <span style="font-weight:600;font-size:15px;">nRF52840</span>
+        <span style="font-size:11px;color:var(--muted);">Application MCU</span>
+      </div>
+      <div class="row"><span class="row-label">Core</span><span class="row-val">ARM Cortex-M4F @ 64 MHz</span></div>
+      <div class="row"><span class="row-label">FPU</span><span class="row-val" style="color:var(--green);">Hardware — critical for FFT</span></div>
+      <div class="row"><span class="row-label">RAM / Flash</span><span class="row-val">256 KB / 1 MB</span></div>
+      <div class="row"><span class="row-label">DMA</span><span class="row-val">SPI DMA — zero-copy capture</span></div>
+      <div class="row"><span class="row-label">Radio</span><span class="row-val">BLE 5.0 multiprotocol</span></div>
+      <div class="row"><span class="row-label">RTOS</span><span class="row-val">Zephyr + CMSIS-DSP</span></div>
+    </div>
+    <div class="card card-accent" style="border-left-color:var(--green);">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;">
+        <span style="font-weight:600;font-size:15px;">ADXL343</span>
+        <span style="font-size:11px;color:var(--muted);">Vibration sensor</span>
+      </div>
+      <div class="row"><span class="row-label">Range</span><span class="row-val">±16g, 13-bit resolution</span></div>
+      <div class="row"><span class="row-label">ODR</span><span class="row-val">1600 Hz maximum</span></div>
+      <div class="row"><span class="row-label">Interface</span><span class="row-val">SPI0 + DMA</span></div>
+      <div class="row"><span class="row-label">FIFO</span><span class="row-val">32-sample hardware buffer</span></div>
+      <div class="row"><span class="row-label">Current</span><span class="row-val">~140 µA measurement mode</span></div>
+      <div class="row"><span class="row-label">Axes</span><span class="row-val">X, Y, Z simultaneous</span></div>
+    </div>
+    <div class="card card-accent" style="border-left-color:var(--pink);">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;">
+        <span style="font-weight:600;font-size:15px;">BME280</span>
+        <span style="font-size:11px;color:var(--muted);">Environmental</span>
+      </div>
+      <div class="row"><span class="row-label">Temperature</span><span class="row-val">±0.5°C accuracy</span></div>
+      <div class="row"><span class="row-label">Humidity</span><span class="row-val">±3% RH accuracy</span></div>
+      <div class="row"><span class="row-label">Pressure</span><span class="row-val">300–1100 hPa</span></div>
+      <div class="row"><span class="row-label">Interface</span><span class="row-val">I2C shared bus</span></div>
+      <div class="row"><span class="row-label">Current</span><span class="row-val">~3.6 µA forced mode</span></div>
+      <div class="row"><span class="row-label">Sample rate</span><span class="row-val">Once per analysis cycle</span></div>
+    </div>
+    <div class="card card-accent" style="border-left-color:var(--amber);">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;">
+        <span style="font-weight:600;font-size:15px;">SX1262</span>
+        <span style="font-size:11px;color:var(--muted);">LoRa radio — future</span>
+      </div>
+      <div class="row"><span class="row-label">Band</span><span class="row-val">915 MHz (CA / US)</span></div>
+      <div class="row"><span class="row-label">SF range</span><span class="row-val">SF7–SF12 adaptive</span></div>
+      <div class="row"><span class="row-label">TX power</span><span class="row-val">+22 dBm max</span></div>
+      <div class="row"><span class="row-label">Sensitivity</span><span class="row-val">-148 dBm @ SF12</span></div>
+      <div class="row"><span class="row-label">Interface</span><span class="row-val">SPI1</span></div>
+      <div class="row"><span class="row-label">Sleep</span><span class="row-val">~0.9 µA</span></div>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;">
+    <div class="label">BUS ASSIGNMENTS</div>
+    <div class="card">
+      <div class="row"><span style="color:var(--green);font-family:var(--mono);font-weight:600;min-width:120px;">SPI0 (DMA)</span><span class="row-val" style="color:var(--muted);text-align:left;">ADXL343 — high speed, DMA-driven, 1600 Hz continuous</span></div>
+      <div class="row"><span style="color:var(--amber);font-family:var(--mono);font-weight:600;min-width:120px;">SPI1</span><span class="row-val" style="color:var(--muted);text-align:left;">SX1262 LoRa — future, burst transfers during TX/RX only</span></div>
+      <div class="row"><span style="color:var(--pink);font-family:var(--mono);font-weight:600;min-width:120px;">I2C0</span><span class="row-val" style="color:var(--muted);text-align:left;">BME280 — slow bus, sampled once per 60s cycle</span></div>
+      <div class="row"><span style="color:var(--blue);font-family:var(--mono);font-weight:600;min-width:120px;">GPIO</span><span class="row-val" style="color:var(--muted);text-align:left;">ADXL343 INT1 (FIFO), SX1262 DIO1, LED status</span></div>
+      <div class="row"><span style="color:var(--purple);font-family:var(--mono);font-weight:600;min-width:120px;">ADC</span><span class="row-val" style="color:var(--muted);text-align:left;">Battery voltage divider — 12-bit SAR</span></div>
+      <div class="row"><span style="color:var(--teal);font-family:var(--mono);font-weight:600;min-width:120px;">BLE (onboard)</span><span class="row-val" style="color:var(--muted);text-align:left;">Diagnostic interface — phone app, firmware OTA, NUS transport</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- PIPELINE -->
+<div id="pipeline" class="section">
+  <div class="label">PROCESSING PIPELINE — PER ANALYSIS CYCLE (60s default)</div>
+
+  <div class="step-row">
+    <div class="step-connector"><div class="step-num">01</div><div class="step-line"></div></div>
+    <div class="step-card">
+      <div class="step-header">
+        <span class="step-title">DMA sample collection</span>
+        <span class="badge" style="background:#0d2e1a;color:var(--green);">640 ms</span>
+      </div>
+      <div class="step-desc">nRF SPI DMA pulls 1024 samples per axis from ADXL343 FIFO at 1600 Hz. Zero CPU involvement during capture. Lock-free ring buffer with power-of-2 sizing. FIFO interrupt triggers next DMA transfer. Semaphore posted to FSM when buffer half is full.</div>
+      <div class="code-block">// DMA ISR — lock-free push
+buffer[write_ptr] = sample;
+__DMB();
+write_ptr = (write_ptr + 1) & MASK;
+k_sem_give(&half_ready);</div>
+    </div>
+  </div>
+
+  <div class="step-row">
+    <div class="step-connector"><div class="step-num">02</div><div class="step-line"></div></div>
+    <div class="step-card">
+      <div class="step-header">
+        <span class="step-title">Convert + Hanning window</span>
+        <span class="badge" style="background:#0c1e38;color:var(--blue);">~0.8 ms</span>
+      </div>
+      <div class="step-desc">Convert int16 ADC counts to float32 g-values using scale factor. Apply Hanning window to reduce spectral leakage — critical for bearing fault frequency isolation. Window coefficients stored as const array in flash.</div>
+      <div class="code-block">for (int i = 0; i < N; i++) {
+    float w = 0.5f * (1.0f - arm_cos_f32(2*PI*i/N));
+    x[i] = (raw[i] * SCALE_G) * w;
+}</div>
+    </div>
+  </div>
+
+  <div class="step-row">
+    <div class="step-connector"><div class="step-num">03</div><div class="step-line"></div></div>
+    <div class="step-card">
+      <div class="step-header">
+        <span class="step-title">CMSIS-DSP FFT</span>
+        <span class="badge" style="background:#0c1e38;color:var(--blue);">~2.4 ms</span>
+      </div>
+      <div class="step-desc">arm_rfft_fast_f32() on 1024 points. Leverages FPU SIMD — 20× faster than software float. Output is complex spectrum. arm_cmplx_mag_f32() computes magnitude. Frequency resolution = 1600 / 1024 = 1.5625 Hz/bin.</div>
+      <div class="code-block">arm_rfft_fast_instance_f32 fft;
+arm_rfft_fast_init_f32(&fft, 1024);
+arm_rfft_fast_f32(&fft, x, fft_out, 0);
+arm_cmplx_mag_f32(fft_out, mag, 512);</div>
+    </div>
+  </div>
+
+  <div class="step-row">
+    <div class="step-connector"><div class="step-num">04</div><div class="step-line"></div></div>
+    <div class="step-card">
+      <div class="step-header">
+        <span class="step-title">RPM estimation</span>
+        <span class="badge" style="background:#0c1e38;color:var(--blue);">~0.2 ms</span>
+      </div>
+      <div class="step-desc">Search FFT magnitude within ±10% of nameplate RPM. Find peak bin k. Apply quadratic interpolation using neighbors k±1 for sub-bin accuracy. Achieves ~±12 RPM precision. No Hall sensor needed in field deployment.</div>
+      <div class="code-block">// Quadratic interpolation for sub-bin accuracy
+float delta = 0.5f * (mag[k-1] - mag[k+1]) /
+              (mag[k-1] - 2.0f*mag[k] + mag[k+1]);
+float true_freq = (k + delta) * freq_resolution;
+uint16_t rpm = (uint16_t)(true_freq * 60.0f);</div>
+    </div>
+  </div>
+
+  <div class="step-row">
+    <div class="step-connector"><div class="step-num">05</div><div class="step-line"></div></div>
+    <div class="step-card">
+      <div class="step-header">
+        <span class="step-title">Bearing band energies</span>
+        <span class="badge" style="background:#0c1e38;color:var(--blue);">~0.3 ms</span>
+      </div>
+      <div class="step-desc">Compute BPFO, BPFI, BSF, FTF from RPM + bearing geometry constants (loaded at commissioning). Sum FFT magnitude in ±2-bin window around each fault frequency and harmonics. Computed per axis independently.</div>
+      <div class="code-block">// BPFO for 6202 bearing (N_BALLS=9)
+float bpfo_hz = 0.4f * N_BALLS * rpm / 60.0f;
+int bin = (int)(bpfo_hz / freq_resolution);
+float energy = 0;
+for (int i = bin-2; i <= bin+2; i++)
+    energy += mag[i];</div>
+    </div>
+  </div>
+
+  <div class="step-row">
+    <div class="step-connector"><div class="step-num">06</div></div>
+    <div class="step-card">
+      <div class="step-header">
+        <span class="step-title">Time domain features</span>
+        <span class="badge" style="background:#0c1e38;color:var(--blue);">~0.4 ms</span>
+      </div>
+      <div class="step-desc">RMS (overall energy), peak, crest factor (peak/RMS — impulsive sensitivity), kurtosis (4th moment of 1024-sample window — early fault indicator). All computed per axis using CMSIS-DSP primitives on FPU. Single-window statistics — no history needed.</div>
+      <div class="code-block">arm_rms_f32(x, N, &rms);
+arm_abs_max_f32(x, N, &peak, &peak_idx);
+float crest = peak / rms;
+// Kurtosis: 4th moment / variance^2
+float kurtosis = moment4 / (rms * rms * rms * rms);</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div id="features" class="section">
+  <div class="label">EXTRACTED FEATURE SET — ALL FREQUENCY + TIME DOMAIN PER AXIS (X, Y, Z)</div>
+  <div class="grid2">
+    <div class="card card-accent" style="border-left-color:var(--blue);">
+      <div style="font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:2px;color:var(--blue);margin-bottom:14px;">FREQUENCY DOMAIN</div>
+      <div class="row"><span>BPFO energy</span><span style="font-size:11px;color:var(--muted);">Outer race fault indicator</span></div>
+      <div class="row"><span>BPFI energy</span><span style="font-size:11px;color:var(--muted);">Inner race fault indicator</span></div>
+      <div class="row"><span>BSF energy</span><span style="font-size:11px;color:var(--muted);">Rolling element fault</span></div>
+      <div class="row"><span>FTF energy</span><span style="font-size:11px;color:var(--muted);">Cage fault indicator</span></div>
+      <div class="row"><span>1× RPM energy</span><span style="font-size:11px;color:var(--muted);">Imbalance indicator</span></div>
+      <div class="row"><span>2× RPM energy</span><span style="font-size:11px;color:var(--muted);">Misalignment indicator</span></div>
+    </div>
+    <div class="card card-accent" style="border-left-color:var(--green);">
+      <div style="font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:2px;color:var(--green);margin-bottom:14px;">TIME DOMAIN</div>
+      <div class="row"><span>RMS</span><span style="font-size:11px;color:var(--muted);">Overall vibration energy level</span></div>
+      <div class="row"><span>Peak</span><span style="font-size:11px;color:var(--muted);">Maximum absolute amplitude</span></div>
+      <div class="row"><span>Crest factor</span><span style="font-size:11px;color:var(--muted);">Peak / RMS — impulsive sensitivity</span></div>
+      <div class="row"><span>Kurtosis</span><span style="font-size:11px;color:var(--muted);">4th moment — early fault detection</span></div>
+    </div>
+    <div class="card card-accent" style="border-left-color:var(--pink);">
+      <div style="font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:2px;color:var(--pink);margin-bottom:14px;">ENVIRONMENTAL</div>
+      <div class="row"><span>Temperature</span><span style="font-size:11px;color:var(--muted);">°C — BME280, 0.01° resolution</span></div>
+      <div class="row"><span>Humidity</span><span style="font-size:11px;color:var(--muted);">% RH — bearing corrosion correlate</span></div>
+      <div class="row"><span>Pressure</span><span style="font-size:11px;color:var(--muted);">hPa — 0.1 resolution</span></div>
+    </div>
+    <div class="card card-accent" style="border-left-color:var(--amber);">
+      <div style="font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:2px;color:var(--amber);margin-bottom:14px;">METADATA</div>
+      <div class="row"><span>RPM</span><span style="font-size:11px;color:var(--muted);">From FFT quadratic interpolation</span></div>
+      <div class="row"><span>Battery mV</span><span style="font-size:11px;color:var(--muted);">LiPo state of charge</span></div>
+      <div class="row"><span>Node ID</span><span style="font-size:11px;color:var(--muted);">Unique sensor identity</span></div>
+      <div class="row"><span>Sequence</span><span style="font-size:11px;color:var(--muted);">Packet loss detection counter</span></div>
+    </div>
+  </div>
+
+  <div class="highlight-box" style="border-color:var(--purple-dim);background:#0d0b1e;margin-top:16px;">
+    <div style="font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:2px;color:var(--purple);margin-bottom:14px;">BEARING FAULT FREQUENCY FORMULAS — 6202 BEARING (N=9 BALLS)</div>
+    <div class="grid2" style="gap:8px;">
+      <div class="row"><span class="mono" style="color:var(--purple);min-width:60px;">BPFO</span><span style="font-size:12px;color:var(--muted);">0.4 × N_balls × RPM/60 ≈ 77 Hz @ 1500 RPM</span></div>
+      <div class="row"><span class="mono" style="color:var(--purple);min-width:60px;">BPFI</span><span style="font-size:12px;color:var(--muted);">0.6 × N_balls × RPM/60 ≈ 113 Hz @ 1500 RPM</span></div>
+      <div class="row"><span class="mono" style="color:var(--purple);min-width:60px;">BSF</span><span style="font-size:12px;color:var(--muted);">0.23 × N_balls × RPM/60 ≈ 52 Hz @ 1500 RPM</span></div>
+      <div class="row"><span class="mono" style="color:var(--purple);min-width:60px;">FTF</span><span style="font-size:12px;color:var(--muted);">0.4 × RPM/60 ≈ 10 Hz @ 1500 RPM</span></div>
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:16px;">
+    All frequency domain features computed independently per axis (X, Y, Z) — 6 freq features × 3 axes = 18 values. All time domain features per axis — 4 × 3 = 12 values. Total: 30 float32 feature values plus environmental and metadata.
+  </div>
+</div>
+
+<!-- POWER -->
+<div id="power" class="section">
+  <div class="label">POWER CONSUMPTION — 60 SECOND ANALYSIS CYCLE (BLE)</div>
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px;">
+    <table class="spec">
+      <thead><tr><th>Phase</th><th>Duration</th><th>Current</th><th>Energy</th></tr></thead>
+      <tbody>
+        <tr><td>Deep sleep</td><td class="mono">~59.0 s</td><td class="mono" style="color:var(--green);">3 µA</td><td class="mono">0.18 mAs</td></tr>
+        <tr><td>DMA sampling (3 axes)</td><td class="mono">640 ms</td><td class="mono" style="color:var(--blue);">6.1 mA</td><td class="mono">3.90 mAs</td></tr>
+        <tr><td>FFT + feature extraction</td><td class="mono">~3.4 ms</td><td class="mono" style="color:var(--purple);">6.0 mA</td><td class="mono">0.02 mAs</td></tr>
+        <tr><td>BME280 forced read</td><td class="mono">~2 ms</td><td class="mono" style="color:var(--pink);">4.5 mA</td><td class="mono">0.01 mAs</td></tr>
+        <tr><td>BLE NUS notify</td><td class="mono">~10 ms</td><td class="mono" style="color:var(--amber);">~8 mA</td><td class="mono">0.08 mAs</td></tr>
+        <tr class="total"><td>Average (60s cycle)</td><td class="mono">60 s</td><td class="mono" style="color:var(--amber);">~0.07 mA</td><td class="mono">~4.2 mAs</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="label">ENERGY DISTRIBUTION</div>
+  <div class="bar-row">
+    <div class="bar-label">Sampling</div>
+    <div class="bar-track"><div class="bar-fill" style="width:91%;background:var(--blue-dim);color:#79c0ff;">Sampling 91%</div></div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">BLE TX</div>
+    <div class="bar-track"><div class="bar-fill" style="width:7%;background:var(--amber-dim);color:#f0a832;min-width:50px;">7%</div></div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">FFT</div>
+    <div class="bar-track"><div class="bar-fill" style="width:2%;background:var(--purple-dim);color:#afa9ec;min-width:36px;">2%</div></div>
+  </div>
+
+  <p class="note" style="margin-top:14px;">BLE current is much lower than LoRa TX. When LoRa is added (SF9, 122 bytes ≈ 380ms airtime ≈ 49mA), it will dominate the budget at ~78% of total energy. SF choice becomes the main power lever at that stage.</p>
+
+  <div class="grid2" style="margin-top:20px;">
+    <div class="card">
+      <div class="row"><span>500 mAh LiPo, BLE only</span><span style="font-weight:600;color:var(--green);font-family:var(--mono);">~7000 hours</span></div>
+    </div>
+    <div class="card">
+      <div class="row"><span>500 mAh LiPo, LoRa SF9</span><span style="font-weight:600;color:var(--green);font-family:var(--mono);">~260 days</span></div>
+    </div>
+    <div class="card">
+      <div class="row"><span>500 mAh + solar (5V 1W)</span><span style="font-weight:600;color:var(--green);font-family:var(--mono);">Indefinite *</span></div>
+    </div>
+    <div class="card">
+      <div class="row"><span>SF7 vs SF12 (LoRa future)</span><span style="font-weight:600;color:var(--amber);font-family:var(--mono);">4.5× battery difference</span></div>
+    </div>
+  </div>
+  <p class="note">* Solar assumes 5V 1W panel, ~4h effective sun/day in Toronto, charging via CN3065 to 500mAh LiPo.</p>
+</div>
+
+<!-- PACKET -->
+<div id="packet" class="section">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <div class="label" style="margin-bottom:0;">BLE PAYLOAD STRUCTURE</div>
+    <span class="total-badge">122 BYTES TOTAL</span>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px;">
+    <table class="spec">
+      <thead><tr><th>Bytes</th><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">1</td><td>Node ID</td><td class="mono">uint8</td><td style="color:var(--muted);">Unique sensor identity (0–254)</td></tr>
+        <tr><td class="mono">1</td><td>Sequence</td><td class="mono">uint8</td><td style="color:var(--muted);">Packet loss detection counter</td></tr>
+        <tr><td class="mono">2</td><td>RPM</td><td class="mono">uint16</td><td style="color:var(--muted);">From FFT quadratic interpolation</td></tr>
+        <tr><td class="mono">2</td><td>Battery mV</td><td class="mono">uint16</td><td style="color:var(--muted);">LiPo state of charge</td></tr>
+        <tr><td class="mono">2</td><td>Temperature</td><td class="mono">int16</td><td style="color:var(--muted);">0.01°C resolution (×100 scaled)</td></tr>
+        <tr><td class="mono">1</td><td>Humidity</td><td class="mono">uint8</td><td style="color:var(--muted);">0–100% RH</td></tr>
+        <tr><td class="mono">2</td><td>Pressure</td><td class="mono">uint16</td><td style="color:var(--muted);">0.1 hPa resolution</td></tr>
+        <tr><td class="mono">1</td><td>Flags</td><td class="mono">uint8</td><td style="color:var(--muted);">Status bits — reserved for future use</td></tr>
+        <tr><td class="mono" style="color:var(--green);">12</td><td>RMS (X, Y, Z)</td><td class="mono">float32 ×3</td><td style="color:var(--muted);">Overall vibration level per axis</td></tr>
+        <tr><td class="mono" style="color:var(--green);">12</td><td>Kurtosis (X, Y, Z)</td><td class="mono">float32 ×3</td><td style="color:var(--muted);">Early fault indicator per axis</td></tr>
+        <tr><td class="mono" style="color:var(--green);">12</td><td>Crest factor (X, Y, Z)</td><td class="mono">float32 ×3</td><td style="color:var(--muted);">Impulsive sensitivity per axis</td></tr>
+        <tr><td class="mono" style="color:var(--blue);">12</td><td>BPFO energy (X, Y, Z)</td><td class="mono">float32 ×3</td><td style="color:var(--muted);">Outer race fault energy</td></tr>
+        <tr><td class="mono" style="color:var(--blue);">12</td><td>BPFI energy (X, Y, Z)</td><td class="mono">float32 ×3</td><td style="color:var(--muted);">Inner race fault energy</td></tr>
+        <tr><td class="mono" style="color:var(--blue);">12</td><td>BSF energy (X, Y, Z)</td><td class="mono">float32 ×3</td><td style="color:var(--muted);">Rolling element fault energy</td></tr>
+        <tr><td class="mono" style="color:var(--blue);">12</td><td>FTF energy (X, Y, Z)</td><td class="mono">float32 ×3</td><td style="color:var(--muted);">Cage fault energy</td></tr>
+        <tr><td class="mono" style="color:var(--blue);">12</td><td>1× RPM energy (X, Y, Z)</td><td class="mono">float32 ×3</td><td style="color:var(--muted);">Imbalance indicator</td></tr>
+        <tr><td class="mono" style="color:var(--blue);">12</td><td>2× RPM energy (X, Y, Z)</td><td class="mono">float32 ×3</td><td style="color:var(--muted);">Misalignment indicator</td></tr>
+        <tr><td class="mono">2</td><td>CRC-16</td><td class="mono">uint16</td><td style="color:var(--muted);">Packet integrity check</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div style="font-size:11px;font-family:var(--mono);letter-spacing:1.5px;color:var(--muted);margin-bottom:10px;">BLE FIT</div>
+      <div style="font-size:13px;line-height:1.7;color:var(--muted);">122 bytes fits in a single BLE notification with Data Length Extension (247 byte MTU on nRF52840). No fragmentation needed.</div>
+    </div>
+    <div class="card">
+      <div style="font-size:11px;font-family:var(--mono);letter-spacing:1.5px;color:var(--muted);margin-bottom:10px;">FUTURE LORA FIT</div>
+      <div style="font-size:13px;line-height:1.7;color:var(--muted);">122 bytes at SF9 BW125 = ~380ms airtime. At 60s interval = 0.63% duty cycle. Well within 1% regional limit.</div>
+    </div>
+    <div class="card">
+      <div style="font-size:11px;font-family:var(--mono);letter-spacing:1.5px;color:var(--muted);margin-bottom:10px;">FLOAT32 RATIONALE</div>
+      <div style="font-size:13px;line-height:1.7;color:var(--muted);">Features kept as float32 — no quantization until real field data establishes expected value ranges. Quantize to int16 later if bandwidth becomes a concern.</div>
+    </div>
+    <div class="card">
+      <div style="font-size:11px;font-family:var(--mono);letter-spacing:1.5px;color:var(--muted);margin-bottom:10px;">BYTE BREAKDOWN</div>
+      <div class="row"><span>Header / metadata</span><span class="mono" style="color:var(--amber);">12 bytes</span></div>
+      <div class="row"><span>Time domain (3×4 feats)</span><span class="mono" style="color:var(--green);">36 bytes</span></div>
+      <div class="row"><span>Freq domain (6×3 axes)</span><span class="mono" style="color:var(--blue);">72 bytes</span></div>
+      <div class="row"><span>CRC</span><span class="mono" style="color:var(--muted);">2 bytes</span></div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+function show(id, tab) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  tab.classList.add('active');
+}
+</script>
+</body>
+</html>
