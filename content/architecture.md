@@ -5,7 +5,7 @@ draft: false
 ---
 
 {{< rawhtml >}}
-<iframe src="/architecture.html"
+<iframe src="/hvac-vibe-architecture.html"
         width="100%"
         height="850px"
         frameborder="0"
