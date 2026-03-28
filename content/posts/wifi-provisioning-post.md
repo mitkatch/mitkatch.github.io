@@ -56,7 +56,7 @@ break.
 
 The provisioning flow looks like this:
 
-```
+```text
 Boot
  └── hvac-setup.service starts
       └── needs_setup()?
@@ -147,7 +147,7 @@ before ever booting the Pi, or from the Pi itself after first boot.
 
 **Edit `/boot/firmware/config.txt`** — add this line at the end:
 
-```
+```ini
 dtoverlay=dwc2
 ```
 
@@ -155,7 +155,7 @@ dtoverlay=dwc2
 Find `rootwait` and add `modules-load=dwc2,g_serial` immediately after it,
 separated by a space:
 
-```
+```ini
 ... rootwait modules-load=dwc2,g_serial quiet ...
 ```
 
@@ -283,7 +283,7 @@ sudo ip link set wlan0 up
 
 Create a minimal hostapd config at `/tmp/hostapd.conf`:
 
-```
+```ini
 interface=wlan0
 driver=nl80211
 ssid=HVAC-Vibe-Setup
@@ -472,7 +472,7 @@ A headless device needs recovery paths that don't require network access.
 **SD card triggers** — create empty files on the `/boot/firmware` partition
 (FAT32, writable from Windows Explorer or Mac Finder without any tools):
 
-```
+```ini
 hvac-reset-wifi    → forces setup UI on next boot
 hvac-restore-wifi  → restores factory WiFi config silently
 ```
