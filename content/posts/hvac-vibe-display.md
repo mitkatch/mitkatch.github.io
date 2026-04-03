@@ -1,9 +1,9 @@
-# HVAC-Vibe Display
-
-The display subsystem for HVAC-Vibe runs on a Waveshare 3.5" IPS LCD HAT
-attached to the Raspberry Pi Zero 2W gateway. It shows live vibration data,
-environmental readings, and a daily RMS trend chart — all rendered locally
-via pygame directly to the framebuffer.
+---
+title: "HVAC-Vibe Display"
+date: 2026-04-03
+draft: false
+tags: ["raspberry-pi", "pygame", "waveshare", "lcd", "mqqt", "hvac-vibe"]
+description: "The display subsystem for HVAC-Vibe runs on a Waveshare 3.5 IPS LCD HAT attached to the Raspberry Pi Zero 2W gateway. It shows live vibration data, environmental readings, and a daily RMS trend chart — all rendered locally via pygame directly to the  framebuffer."
 
 ---
 
@@ -184,7 +184,8 @@ based on the number of active sensors:
 
 **Single sensor layout (most common)**
 
-![HVAC-Vibe single sensor display](display.png)
+![HVAC-Vibe single sensor display](/images/hvac-display.png)
+
 
 **Chart features**
 - Daily RMS trend for the current day (minute-resolution from SQLite)
