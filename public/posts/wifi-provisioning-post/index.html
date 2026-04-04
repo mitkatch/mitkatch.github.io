@@ -10,7 +10,7 @@
 <meta name="description" content="Every tutorial assumes Raspbian and wpa_supplicant. This one doesn&#39;t. A complete guide to headless WiFi provisioning on Ubuntu cloud-init with NetworkManager, hostapd, and dnsmasq — including every failure mode I hit.">
 <meta name="author" content="Mikhail">
 <link rel="canonical" href="http://localhost:1313/posts/wifi-provisioning-post/">
-<link crossorigin="anonymous" href="/assets/css/stylesheet.0a294c9bb4ed566c005d0551a62adce598a2e16c6053ddfcaab42c51a33fae3c.css" integrity="sha256-CilMm7TtVmwAXQVRpirc5Zii4WxgU938qrQsUaM/rjw=" rel="preload stylesheet" as="style">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.deecb11b9e45294232c25b1a6a7ed0127117e51977f7ed5998550bd8e264b543.css" integrity="sha256-3uyxG55FKUIywlsaan7QEnEX5Rl39&#43;1ZmFUL2OJktUM=" rel="preload stylesheet" as="style">
 <link rel="icon" href="http://localhost:1313/favicon.ico">
 <link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
@@ -111,6 +111,11 @@
                     <span>Posts</span>
                 </a>
             </li>
+            <li>
+                <a href="http://localhost:1313/dashboard/" title="Dashboard">
+                    <span>Dashboard</span>
+                </a>
+            </li>
         </ul>
     </nav>
 </header>
@@ -166,21 +171,21 @@ break.</p>
 <hr>
 <h2 id="architecture">Architecture<a hidden class="anchor" aria-hidden="true" href="#architecture">#</a></h2>
 <p>The provisioning flow looks like this:</p>
-<pre tabindex="0"><code>Boot
- └── hvac-setup.service starts
-      └── needs_setup()?
-           ├── NO  → show IP on display, exit
-           │         hvac-engine starts normally
-           └── YES → scan WiFi (while NM owns wlan0)
-                     start AP (hostapd + dnsmasq)
-                     start Flask web server
-                     show QR code on display
-                     user connects phone, picks network
-                     stop AP, hand wlan0 back to NM
-                     connect via nmcli
-                     mark setup done
-                     hvac-engine starts
-</code></pre><p>A few design decisions worth explaining:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Boot
+</span></span><span style="display:flex;"><span> └── hvac-setup.service starts
+</span></span><span style="display:flex;"><span>      └── needs_setup()?
+</span></span><span style="display:flex;"><span>           ├── NO  → show IP on display, exit
+</span></span><span style="display:flex;"><span>           │         hvac-engine starts normally
+</span></span><span style="display:flex;"><span>           └── YES → scan WiFi (while NM owns wlan0)
+</span></span><span style="display:flex;"><span>                     start AP (hostapd + dnsmasq)
+</span></span><span style="display:flex;"><span>                     start Flask web server
+</span></span><span style="display:flex;"><span>                     show QR code on display
+</span></span><span style="display:flex;"><span>                     user connects phone, picks network
+</span></span><span style="display:flex;"><span>                     stop AP, hand wlan0 back to NM
+</span></span><span style="display:flex;"><span>                     connect via nmcli
+</span></span><span style="display:flex;"><span>                     mark setup done
+</span></span><span style="display:flex;"><span>                     hvac-engine starts
+</span></span></code></pre></div><p>A few design decisions worth explaining:</p>
 <p><strong>Why pre-scan before starting the AP?</strong> Once <code>wlan0</code> switches to AP mode it can no
 longer scan for client networks — the radio can only do one thing at a time. Scan
 first, cache the results, show them in the browser. This is non-obvious and most
@@ -195,12 +200,12 @@ connection logic in a background thread straightforward.</p>
 <hr>
 <h2 id="prerequisites">Prerequisites<a hidden class="anchor" aria-hidden="true" href="#prerequisites">#</a></h2>
 <p>Install the required packages:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo apt update
-</span></span><span class="line"><span class="cl">sudo apt install hostapd dnsmasq python3-flask python3-qrcode network-manager
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo apt update
+</span></span><span style="display:flex;"><span>sudo apt install hostapd dnsmasq python3-flask python3-qrcode network-manager
 </span></span></code></pre></div><p>Disable the system dnsmasq service — it binds to port 67 (DHCP) on startup and
 blocks our instance from starting:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo systemctl disable dnsmasq
-</span></span><span class="line"><span class="cl">sudo systemctl stop dnsmasq
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo systemctl disable dnsmasq
+</span></span><span style="display:flex;"><span>sudo systemctl stop dnsmasq
 </span></span></code></pre></div><p>This is not optional. If system dnsmasq is running when you start your own instance,
 you get <code>Address already in use</code> on port 67 and DHCP never works — phones connect
 to the AP but get no IP address and show a spinner indefinitely.</p>
@@ -230,18 +235,18 @@ console regardless of network state.</p>
 <p>These files are on the FAT32 boot partition — writable directly from Windows
 before ever booting the Pi, or from the Pi itself after first boot.</p>
 <p><strong>Edit <code>/boot/firmware/config.txt</code></strong> — add this line at the end:</p>
-<pre tabindex="0"><code>dtoverlay=dwc2
-</code></pre><p><strong>Edit <code>/boot/firmware/cmdline.txt</code></strong> — this file is a single long line.
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-ini" data-lang="ini"><span style="display:flex;"><span><span style="color:#a6e22e">dtoverlay</span><span style="color:#f92672">=</span><span style="color:#e6db74">dwc2</span>
+</span></span></code></pre></div><p><strong>Edit <code>/boot/firmware/cmdline.txt</code></strong> — this file is a single long line.
 Find <code>rootwait</code> and add <code>modules-load=dwc2,g_serial</code> immediately after it,
 separated by a space:</p>
-<pre tabindex="0"><code>... rootwait modules-load=dwc2,g_serial quiet ...
-</code></pre><p>Do not add a newline — the entire file must remain one line. Adding a newline
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-ini" data-lang="ini"><span style="display:flex;"><span><span style="color:#a6e22e">... rootwait modules-load</span><span style="color:#f92672">=</span><span style="color:#e6db74">dwc2,g_serial quiet ...</span>
+</span></span></code></pre></div><p>Do not add a newline — the entire file must remain one line. Adding a newline
 here causes a boot failure that looks completely unrelated.</p>
 <p><strong>Enable the getty service</strong> — run this on the Pi:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo systemctl <span class="nb">enable</span> getty@ttyGS0.service
-</span></span><span class="line"><span class="cl">sudo systemctl start getty@ttyGS0.service
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo systemctl enable getty@ttyGS0.service
+</span></span><span style="display:flex;"><span>sudo systemctl start getty@ttyGS0.service
 </span></span></code></pre></div><p>Reboot:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo reboot
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo reboot
 </span></span></code></pre></div><h3 id="connect-from-windows">Connect from Windows<a hidden class="anchor" aria-hidden="true" href="#connect-from-windows">#</a></h3>
 <p>Connect the micro USB cable to the <strong>data port</strong> on the Pi Zero 2W — not the
 power port. The Pi Zero 2W has two micro USB ports: one labelled PWR (power only)
@@ -261,14 +266,14 @@ install a driver. On Windows 10/11 it usually installs automatically.</p>
 <p>You should see a Linux login prompt. Log in with your Ubuntu credentials.</p>
 <h3 id="verify-it-works">Verify It Works<a hidden class="anchor" aria-hidden="true" href="#verify-it-works">#</a></h3>
 <p>Once connected, run a quick test to confirm the console is fully functional:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Check network state</span>
-</span></span><span class="line"><span class="cl">nmcli dev status
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="c1"># Check systemd services</span>
-</span></span><span class="line"><span class="cl">systemctl status hvac-setup.service
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="c1"># Watch live logs</span>
-</span></span><span class="line"><span class="cl">journalctl -f
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Check network state</span>
+</span></span><span style="display:flex;"><span>nmcli dev status
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check systemd services</span>
+</span></span><span style="display:flex;"><span>systemctl status hvac-setup.service
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Watch live logs</span>
+</span></span><span style="display:flex;"><span>journalctl -f
 </span></span></code></pre></div><p>The <code>journalctl -f</code> command is your most important debugging tool — it streams
 all system logs in real time. When your provisioning script runs and something
 goes wrong, the exact error appears here immediately. Without this you are
@@ -281,11 +286,11 @@ port directly on your machine, not a hub, and use a quality cable.</p>
 <hr>
 <h2 id="step-1-scan-networks-before-touching-the-ap">Step 1: Scan Networks Before Touching the AP<a hidden class="anchor" aria-hidden="true" href="#step-1-scan-networks-before-touching-the-ap">#</a></h2>
 <p>This must happen while NetworkManager still owns <code>wlan0</code> — before any AP setup.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Force a fresh scan</span>
-</span></span><span class="line"><span class="cl">nmcli dev wifi rescan
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="c1"># List visible networks with signal strength</span>
-</span></span><span class="line"><span class="cl">nmcli -t -f SSID,SIGNAL,SECURITY dev wifi list
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Force a fresh scan</span>
+</span></span><span style="display:flex;"><span>nmcli dev wifi rescan
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># List visible networks with signal strength</span>
+</span></span><span style="display:flex;"><span>nmcli -t -f SSID,SIGNAL,SECURITY dev wifi list
 </span></span></code></pre></div><p>Cache these results. Once you start hostapd, <code>wlan0</code> is in AP mode and these commands
 return nothing.</p>
 <hr>
@@ -294,46 +299,46 @@ return nothing.</p>
 NetworkManager actively manages <code>wlan0</code> in client mode. If you start hostapd without
 releasing the interface first, NM and hostapd fight over it. The AP may appear to
 start but phones can&rsquo;t see it, or they see it but can&rsquo;t connect.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Disconnect from any current network</span>
-</span></span><span class="line"><span class="cl">sudo nmcli dev disconnect wlan0
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="c1"># Tell NetworkManager to stop managing this interface entirely</span>
-</span></span><span class="line"><span class="cl">sudo nmcli dev <span class="nb">set</span> wlan0 managed no
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Disconnect from any current network</span>
+</span></span><span style="display:flex;"><span>sudo nmcli dev disconnect wlan0
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Tell NetworkManager to stop managing this interface entirely</span>
+</span></span><span style="display:flex;"><span>sudo nmcli dev set wlan0 managed no
 </span></span></code></pre></div><p>Verify it worked:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">nmcli dev status
-</span></span><span class="line"><span class="cl"><span class="c1"># wlan0 should show: unmanaged</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>nmcli dev status
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># wlan0 should show: unmanaged</span>
 </span></span></code></pre></div><hr>
 <h2 id="step-3-assign-a-static-ip-to-wlan0">Step 3: Assign a Static IP to wlan0<a hidden class="anchor" aria-hidden="true" href="#step-3-assign-a-static-ip-to-wlan0">#</a></h2>
 <p>hostapd handles the AP radio but doesn&rsquo;t assign an IP. You need one so dnsmasq
 can serve DHCP leases from a known address:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo ip addr flush dev wlan0
-</span></span><span class="line"><span class="cl">sudo ip addr add 192.168.4.1/24 dev wlan0
-</span></span><span class="line"><span class="cl">sudo ip link <span class="nb">set</span> wlan0 up
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo ip addr flush dev wlan0
+</span></span><span style="display:flex;"><span>sudo ip addr add 192.168.4.1/24 dev wlan0
+</span></span><span style="display:flex;"><span>sudo ip link set wlan0 up
 </span></span></code></pre></div><hr>
 <h2 id="step-4-start-hostapd">Step 4: Start hostapd<a hidden class="anchor" aria-hidden="true" href="#step-4-start-hostapd">#</a></h2>
 <p>Create a minimal hostapd config at <code>/tmp/hostapd.conf</code>:</p>
-<pre tabindex="0"><code>interface=wlan0
-driver=nl80211
-ssid=HVAC-Vibe-Setup
-hw_mode=g
-channel=6
-wpa=0
-</code></pre><p><code>wpa=0</code> means open network — no password on the setup AP. Acceptable since it&rsquo;s
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-ini" data-lang="ini"><span style="display:flex;"><span><span style="color:#a6e22e">interface</span><span style="color:#f92672">=</span><span style="color:#e6db74">wlan0</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">driver</span><span style="color:#f92672">=</span><span style="color:#e6db74">nl80211</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ssid</span><span style="color:#f92672">=</span><span style="color:#e6db74">HVAC-Vibe-Setup</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">hw_mode</span><span style="color:#f92672">=</span><span style="color:#e6db74">g</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">channel</span><span style="color:#f92672">=</span><span style="color:#e6db74">6</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">wpa</span><span style="color:#f92672">=</span><span style="color:#e6db74">0</span>
+</span></span></code></pre></div><p><code>wpa=0</code> means open network — no password on the setup AP. Acceptable since it&rsquo;s
 temporary and serves only a provisioning page.</p>
 <p>Start it:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo hostapd -B /tmp/hostapd.conf
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo hostapd -B /tmp/hostapd.conf
 </span></span></code></pre></div><p><strong>Important:</strong> Wait 2 seconds before starting dnsmasq. hostapd needs time to fully
 initialize the interface before dnsmasq can bind to it. If dnsmasq starts too early
 it fails silently and phones get no DHCP lease.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sleep <span class="m">2</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sleep <span style="color:#ae81ff">2</span>
 </span></span></code></pre></div><hr>
 <h2 id="step-5-start-dnsmasq">Step 5: Start dnsmasq<a hidden class="anchor" aria-hidden="true" href="#step-5-start-dnsmasq">#</a></h2>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo dnsmasq <span class="se">\
-</span></span></span><span class="line"><span class="cl">  --no-daemon <span class="se">\
-</span></span></span><span class="line"><span class="cl">  --interface<span class="o">=</span>wlan0 <span class="se">\
-</span></span></span><span class="line"><span class="cl">  --dhcp-range<span class="o">=</span>192.168.4.2,192.168.4.20,255.255.255.0,24h <span class="se">\
-</span></span></span><span class="line"><span class="cl">  --address<span class="o">=</span>/#/192.168.4.1 <span class="se">\
-</span></span></span><span class="line"><span class="cl">  --log-queries <span class="p">&amp;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo dnsmasq <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --no-daemon <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --interface<span style="color:#f92672">=</span>wlan0 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --dhcp-range<span style="color:#f92672">=</span>192.168.4.2,192.168.4.20,255.255.255.0,24h <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --address<span style="color:#f92672">=</span>/#/192.168.4.1 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>  --log-queries &amp;
 </span></span></code></pre></div><p>The <code>--address=/#/192.168.4.1</code> line redirects all DNS queries to the Pi&rsquo;s IP —
 this is what makes it a captive portal. Any domain a phone tries to look up resolves
 to 192.168.4.1, which triggers the captive portal detection on iOS and Android
@@ -348,32 +353,32 @@ and pops up the provisioning page automatically.</p>
 <h2 id="step-6-stop-the-ap-and-hand-wlan0-back">Step 6: Stop the AP and Hand wlan0 Back<a hidden class="anchor" aria-hidden="true" href="#step-6-stop-the-ap-and-hand-wlan0-back">#</a></h2>
 <p>When the user submits their network credentials, you need to tear down the AP
 before NM can use <code>wlan0</code> as a client again.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Kill AP processes</span>
-</span></span><span class="line"><span class="cl">sudo pkill hostapd
-</span></span><span class="line"><span class="cl">sleep <span class="m">2</span>
-</span></span><span class="line"><span class="cl">sudo pkill dnsmasq
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="c1"># Flush the static IP</span>
-</span></span><span class="line"><span class="cl">sudo ip addr flush dev wlan0
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="c1"># Return interface to NetworkManager</span>
-</span></span><span class="line"><span class="cl">sudo nmcli dev <span class="nb">set</span> wlan0 managed yes
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Kill AP processes</span>
+</span></span><span style="display:flex;"><span>sudo pkill hostapd
+</span></span><span style="display:flex;"><span>sleep <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>sudo pkill dnsmasq
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Flush the static IP</span>
+</span></span><span style="display:flex;"><span>sudo ip addr flush dev wlan0
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Return interface to NetworkManager</span>
+</span></span><span style="display:flex;"><span>sudo nmcli dev set wlan0 managed yes
 </span></span></code></pre></div><p><strong>The tricky part:</strong> NM doesn&rsquo;t immediately process the <code>managed yes</code> command.
 You must poll until it confirms the interface is managed before proceeding:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Poll until wlan0 is no longer unmanaged</span>
-</span></span><span class="line"><span class="cl"><span class="k">for</span> i in <span class="k">$(</span>seq <span class="m">1</span> 20<span class="k">)</span><span class="p">;</span> <span class="k">do</span>
-</span></span><span class="line"><span class="cl">    <span class="nv">STATE</span><span class="o">=</span><span class="k">$(</span>nmcli -t -f DEVICE,STATE dev status <span class="p">|</span> grep <span class="s2">&#34;^wlan0&#34;</span> <span class="p">|</span> cut -d: -f2<span class="k">)</span>
-</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$STATE</span><span class="s2">&#34;</span> !<span class="o">=</span> <span class="s2">&#34;unmanaged&#34;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
-</span></span><span class="line"><span class="cl">        <span class="nb">echo</span> <span class="s2">&#34;wlan0 is now: </span><span class="nv">$STATE</span><span class="s2">&#34;</span>
-</span></span><span class="line"><span class="cl">        <span class="nb">break</span>
-</span></span><span class="line"><span class="cl">    <span class="k">fi</span>
-</span></span><span class="line"><span class="cl">    <span class="nb">echo</span> <span class="s2">&#34;Waiting for NM to take over wlan0... (</span><span class="nv">$i</span><span class="s2">/20)&#34;</span>
-</span></span><span class="line"><span class="cl">    <span class="c1"># Retry the managed command every 5 seconds</span>
-</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="o">[</span> <span class="k">$((</span>i <span class="o">%</span> <span class="m">5</span><span class="k">))</span> -eq <span class="m">0</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
-</span></span><span class="line"><span class="cl">        sudo nmcli dev <span class="nb">set</span> wlan0 managed yes
-</span></span><span class="line"><span class="cl">    <span class="k">fi</span>
-</span></span><span class="line"><span class="cl">    sleep <span class="m">1</span>
-</span></span><span class="line"><span class="cl"><span class="k">done</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Poll until wlan0 is no longer unmanaged</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i in <span style="color:#66d9ef">$(</span>seq <span style="color:#ae81ff">1</span> 20<span style="color:#66d9ef">)</span>; <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>    STATE<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>nmcli -t -f DEVICE,STATE dev status | grep <span style="color:#e6db74">&#34;^wlan0&#34;</span> | cut -d: -f2<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> <span style="color:#e6db74">&#34;</span>$STATE<span style="color:#e6db74">&#34;</span> !<span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;unmanaged&#34;</span> <span style="color:#f92672">]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>        echo <span style="color:#e6db74">&#34;wlan0 is now: </span>$STATE<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>        break
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;Waiting for NM to take over wlan0... (</span>$i<span style="color:#e6db74">/20)&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Retry the managed command every 5 seconds</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> <span style="color:#66d9ef">$((</span>i <span style="color:#f92672">%</span> <span style="color:#ae81ff">5</span><span style="color:#66d9ef">))</span> -eq <span style="color:#ae81ff">0</span> <span style="color:#f92672">]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>        sudo nmcli dev set wlan0 managed yes
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>    sleep <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
 </span></span></code></pre></div><p>Skipping this poll is the cause of the most frustrating failure mode: NM is given
 the interface back but hasn&rsquo;t finished processing it. The next <code>nmcli</code> command
 runs against an interface NM thinks is still unmanaged. The command silently fails
@@ -382,10 +387,10 @@ or returns &ldquo;No network with SSID found&rdquo; even when the network is cle
 <h2 id="step-7-connect-to-the-target-network">Step 7: Connect to the Target Network<a hidden class="anchor" aria-hidden="true" href="#step-7-connect-to-the-target-network">#</a></h2>
 <p>After the AP is down and NM owns <code>wlan0</code> again, wait 5 seconds for the radio to
 reinitialize in client mode, then rescan:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sleep <span class="m">5</span>
-</span></span><span class="line"><span class="cl">nmcli dev wifi rescan
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sleep <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>nmcli dev wifi rescan
 </span></span></code></pre></div><p>Verify the target SSID is visible before attempting connection:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">nmcli -t -f SSID dev wifi list <span class="p">|</span> grep <span class="s2">&#34;^</span><span class="si">${</span><span class="nv">TARGET_SSID</span><span class="si">}</span>$<span class="s2">&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>nmcli -t -f SSID dev wifi list | grep <span style="color:#e6db74">&#34;^</span><span style="color:#e6db74">${</span>TARGET_SSID<span style="color:#e6db74">}</span>$<span style="color:#e6db74">&#34;</span>
 </span></span></code></pre></div><p>If it&rsquo;s not visible yet, retry up to 4 times with 5 second gaps. The radio needs
 time after switching from AP mode.</p>
 <p><strong>Do not use <code>nmcli dev wifi connect</code></strong> — it is unreliable without a pre-existing
@@ -393,115 +398,115 @@ connection profile for the SSID. It fails with &ldquo;No network with SSID found
 &ldquo;key-mgmt property missing&rdquo; depending on the NM version.</p>
 <p>Use <code>nmcli con add</code> + <code>nmcli con up</code> instead. This explicitly creates a profile
 with the correct security settings:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Create the connection profile</span>
-</span></span><span class="line"><span class="cl">sudo nmcli con add <span class="se">\
-</span></span></span><span class="line"><span class="cl">    <span class="nb">type</span> wifi <span class="se">\
-</span></span></span><span class="line"><span class="cl">    con-name <span class="s2">&#34;hvac-setup-</span><span class="si">${</span><span class="nv">TARGET_SSID</span><span class="si">}</span><span class="s2">&#34;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl">    ifname wlan0 <span class="se">\
-</span></span></span><span class="line"><span class="cl">    ssid <span class="s2">&#34;</span><span class="si">${</span><span class="nv">TARGET_SSID</span><span class="si">}</span><span class="s2">&#34;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl">    wifi-sec.key-mgmt wpa-psk <span class="se">\
-</span></span></span><span class="line"><span class="cl">    wifi-sec.psk <span class="s2">&#34;</span><span class="si">${</span><span class="nv">PASSWORD</span><span class="si">}</span><span class="s2">&#34;</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="c1"># Bring it up</span>
-</span></span><span class="line"><span class="cl">sudo nmcli con up <span class="s2">&#34;hvac-setup-</span><span class="si">${</span><span class="nv">TARGET_SSID</span><span class="si">}</span><span class="s2">&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Create the connection profile</span>
+</span></span><span style="display:flex;"><span>sudo nmcli con add <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>    type wifi <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>    con-name <span style="color:#e6db74">&#34;hvac-setup-</span><span style="color:#e6db74">${</span>TARGET_SSID<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>    ifname wlan0 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>    ssid <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>TARGET_SSID<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>    wifi-sec.key-mgmt wpa-psk <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>    wifi-sec.psk <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>PASSWORD<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Bring it up</span>
+</span></span><span style="display:flex;"><span>sudo nmcli con up <span style="color:#e6db74">&#34;hvac-setup-</span><span style="color:#e6db74">${</span>TARGET_SSID<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
 </span></span></code></pre></div><p>The <code>con-name</code> prefix <code>hvac-setup-</code> ensures our profiles never conflict with any
 existing NM profiles for the same network.</p>
 <hr>
 <h2 id="step-8-verify-connection-and-get-ip">Step 8: Verify Connection and Get IP<a hidden class="anchor" aria-hidden="true" href="#step-8-verify-connection-and-get-ip">#</a></h2>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Wait for IP assignment (up to 30 seconds)</span>
-</span></span><span class="line"><span class="cl"><span class="k">for</span> i in <span class="k">$(</span>seq <span class="m">1</span> 30<span class="k">)</span><span class="p">;</span> <span class="k">do</span>
-</span></span><span class="line"><span class="cl">    <span class="nv">IP</span><span class="o">=</span><span class="k">$(</span>nmcli -t -f IP4.ADDRESS dev show wlan0 <span class="p">|</span> cut -d: -f2 <span class="p">|</span> cut -d/ -f1<span class="k">)</span>
-</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="o">[</span> -n <span class="s2">&#34;</span><span class="nv">$IP</span><span class="s2">&#34;</span> <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
-</span></span><span class="line"><span class="cl">        <span class="nb">echo</span> <span class="s2">&#34;Connected: </span><span class="nv">$IP</span><span class="s2">&#34;</span>
-</span></span><span class="line"><span class="cl">        <span class="nb">break</span>
-</span></span><span class="line"><span class="cl">    <span class="k">fi</span>
-</span></span><span class="line"><span class="cl">    sleep <span class="m">1</span>
-</span></span><span class="line"><span class="cl"><span class="k">done</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Wait for IP assignment (up to 30 seconds)</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i in <span style="color:#66d9ef">$(</span>seq <span style="color:#ae81ff">1</span> 30<span style="color:#66d9ef">)</span>; <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>    IP<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>nmcli -t -f IP4.ADDRESS dev show wlan0 | cut -d: -f2 | cut -d/ -f1<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> -n <span style="color:#e6db74">&#34;</span>$IP<span style="color:#e6db74">&#34;</span> <span style="color:#f92672">]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>        echo <span style="color:#e6db74">&#34;Connected: </span>$IP<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>        break
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>    sleep <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
 </span></span></code></pre></div><p>Once you have an IP, write it to the cloud-init network config so it persists
 across reboots:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Store hashed password (never store plaintext)</span>
-</span></span><span class="line"><span class="cl"><span class="nv">HASH</span><span class="o">=</span><span class="k">$(</span>wpa_passphrase <span class="s2">&#34;</span><span class="si">${</span><span class="nv">TARGET_SSID</span><span class="si">}</span><span class="s2">&#34;</span> <span class="s2">&#34;</span><span class="si">${</span><span class="nv">PASSWORD</span><span class="si">}</span><span class="s2">&#34;</span> <span class="p">|</span> grep -v <span class="s2">&#34;#psk&#34;</span> <span class="p">|</span> grep <span class="s2">&#34;psk=&#34;</span> <span class="p">|</span> cut -d<span class="o">=</span> -f2<span class="k">)</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl">cat &gt; /boot/firmware/network-config <span class="s">&lt;&lt; EOF
-</span></span></span><span class="line"><span class="cl"><span class="s">version: 2
-</span></span></span><span class="line"><span class="cl"><span class="s">wifis:
-</span></span></span><span class="line"><span class="cl"><span class="s">  wlan0:
-</span></span></span><span class="line"><span class="cl"><span class="s">    dhcp4: true
-</span></span></span><span class="line"><span class="cl"><span class="s">    access-points:
-</span></span></span><span class="line"><span class="cl"><span class="s">      &#34;${TARGET_SSID}&#34;:
-</span></span></span><span class="line"><span class="cl"><span class="s">        password: &#34;${HASH}&#34;
-</span></span></span><span class="line"><span class="cl"><span class="s">EOF</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Store hashed password (never store plaintext)</span>
+</span></span><span style="display:flex;"><span>HASH<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>wpa_passphrase <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>TARGET_SSID<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>PASSWORD<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> | grep -v <span style="color:#e6db74">&#34;#psk&#34;</span> | grep <span style="color:#e6db74">&#34;psk=&#34;</span> | cut -d<span style="color:#f92672">=</span> -f2<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>cat &gt; /boot/firmware/network-config <span style="color:#e6db74">&lt;&lt; EOF
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">version: 2
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">wifis:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  wlan0:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    dhcp4: true
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    access-points:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      &#34;${TARGET_SSID}&#34;:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        password: &#34;${HASH}&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span>
 </span></span></code></pre></div><p>Mark setup as complete:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo mkdir -p /etc/hvac-vibe
-</span></span><span class="line"><span class="cl">sudo touch /etc/hvac-vibe/wifi-configured
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo mkdir -p /etc/hvac-vibe
+</span></span><span style="display:flex;"><span>sudo touch /etc/hvac-vibe/wifi-configured
 </span></span></code></pre></div><hr>
 <h2 id="recovery-mechanisms">Recovery Mechanisms<a hidden class="anchor" aria-hidden="true" href="#recovery-mechanisms">#</a></h2>
 <p>A headless device needs recovery paths that don&rsquo;t require network access.</p>
 <p><strong>SD card triggers</strong> — create empty files on the <code>/boot/firmware</code> partition
 (FAT32, writable from Windows Explorer or Mac Finder without any tools):</p>
-<pre tabindex="0"><code>hvac-reset-wifi    → forces setup UI on next boot
-hvac-restore-wifi  → restores factory WiFi config silently
-</code></pre><p>On Windows:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="c"># Insert SD card, E: is the boot partition</span>
-</span></span><span class="line"><span class="cl"><span class="nb">New-Item</span> <span class="n">E:</span><span class="p">\</span><span class="nb">hvac-reset</span><span class="n">-wifi</span> <span class="n">-ItemType</span> <span class="n">File</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-ini" data-lang="ini"><span style="display:flex;"><span><span style="color:#a6e22e">hvac-reset-wifi    → forces setup UI on next boot</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">hvac-restore-wifi  → restores factory WiFi config silently</span>
+</span></span></code></pre></div><p>On Windows:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-powershell" data-lang="powershell"><span style="display:flex;"><span><span style="color:#75715e"># Insert SD card, E: is the boot partition</span>
+</span></span><span style="display:flex;"><span>New-Item E:\hvac-reset-wifi -ItemType File
 </span></span></code></pre></div><p><strong>USB serial console</strong> — if you followed the setup section at the top of this post,
 this is already working. Connect the data USB port to Windows, open PuTTY on the
 COM port at 115200 baud, and you have a full console regardless of network state.
 This is the most reliable recovery path — use it first.</p>
 <p><strong>But the actual saver</strong> was restore.sh running on live COM connection every time need to back to my wifi:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="cp">#!/bin/bash
-</span></span></span><span class="line"><span class="cl"><span class="nb">echo</span> Delete ALL home-wifi duplicates first
-</span></span><span class="line"><span class="cl">nmcli con show <span class="p">|</span> grep <span class="s2">&#34;home-wifi&#34;</span> <span class="p">|</span> awk <span class="s1">&#39;{print $2}&#39;</span> <span class="p">|</span> <span class="k">while</span> <span class="nb">read</span> uuid<span class="p">;</span> <span class="k">do</span>
-</span></span><span class="line"><span class="cl">     sudo nmcli con delete <span class="s2">&#34;</span><span class="nv">$uuid</span><span class="s2">&#34;</span>
-</span></span><span class="line"><span class="cl">     <span class="nb">echo</span> delete <span class="s2">&#34;</span><span class="nv">$uuid</span><span class="s2">&#34;</span>
-</span></span><span class="line"><span class="cl"><span class="k">done</span>
-</span></span><span class="line"><span class="cl"><span class="c1">#</span>
-</span></span><span class="line"><span class="cl"><span class="nb">echo</span> Return wlan0 to NM
-</span></span><span class="line"><span class="cl">sudo nmcli dev <span class="nb">set</span> wlan0 managed yes
-</span></span><span class="line"><span class="cl">sleep <span class="m">3</span>
-</span></span><span class="line"><span class="cl"><span class="c1">#</span>
-</span></span><span class="line"><span class="cl"><span class="nb">echo</span> Add fresh profile
-</span></span><span class="line"><span class="cl">sudo nmcli con add <span class="se">\
-</span></span></span><span class="line"><span class="cl">   <span class="nb">type</span> wifi <span class="se">\
-</span></span></span><span class="line"><span class="cl">   ifname wlan0 <span class="se">\
-</span></span></span><span class="line"><span class="cl">   con-name <span class="s2">&#34;home-wifi&#34;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl">   ssid <span class="s2">&#34;YUOUR_WIFI_NETWORK&#34;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl">   wifi-sec.key-mgmt wpa-psk <span class="se">\
-</span></span></span><span class="line"><span class="cl">   wifi-sec.psk <span class="s2">&#34;YOUR_psk_generated&#34;</span>
-</span></span><span class="line"><span class="cl"><span class="c1">#</span>
-</span></span><span class="line"><span class="cl">sudo nmcli con up <span class="s2">&#34;home-wifi&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span>echo Delete ALL home-wifi duplicates first
+</span></span><span style="display:flex;"><span>nmcli con show | grep <span style="color:#e6db74">&#34;home-wifi&#34;</span> | awk <span style="color:#e6db74">&#39;{print $2}&#39;</span> | <span style="color:#66d9ef">while</span> read uuid; <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>     sudo nmcli con delete <span style="color:#e6db74">&#34;</span>$uuid<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>     echo delete <span style="color:#e6db74">&#34;</span>$uuid<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span>echo Return wlan0 to NM
+</span></span><span style="display:flex;"><span>sudo nmcli dev set wlan0 managed yes
+</span></span><span style="display:flex;"><span>sleep <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span>echo Add fresh profile
+</span></span><span style="display:flex;"><span>sudo nmcli con add <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>   type wifi <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>   ifname wlan0 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>   con-name <span style="color:#e6db74">&#34;home-wifi&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>   ssid <span style="color:#e6db74">&#34;YUOUR_WIFI_NETWORK&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>   wifi-sec.key-mgmt wpa-psk <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>   wifi-sec.psk <span style="color:#e6db74">&#34;YOUR_psk_generated&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span>sudo nmcli con up <span style="color:#e6db74">&#34;home-wifi&#34;</span>
 </span></span></code></pre></div><p>to generate your psk run and use only code ,like &ldquo;c6757**:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">wpa_passphrase <span class="s2">&#34;YOUR-WIFI&#34;</span> <span class="s2">&#34;your_text_password&#34;</span> <span class="p">|</span> grep -v <span class="s1">&#39;#&#39;</span> <span class="p">|</span> grep <span class="nv">psk</span><span class="o">=</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>wpa_passphrase <span style="color:#e6db74">&#34;YOUR-WIFI&#34;</span> <span style="color:#e6db74">&#34;your_text_password&#34;</span> | grep -v <span style="color:#e6db74">&#39;#&#39;</span> | grep psk<span style="color:#f92672">=</span>
 </span></span></code></pre></div><hr>
 <h2 id="complete-sequence-reference">Complete Sequence Reference<a hidden class="anchor" aria-hidden="true" href="#complete-sequence-reference">#</a></h2>
-<pre tabindex="0"><code>1. scan_networks()           ← while NM owns wlan0, BEFORE AP
-2. pkill dnsmasq             ← kill any system instance
-3. nmcli dev disconnect wlan0
-4. nmcli dev set wlan0 managed no
-5. ip addr add 192.168.4.1/24 dev wlan0
-6. hostapd -B hostapd.conf
-7. sleep 2
-8. dnsmasq (with captive portal redirect)
-9. Flask serves provisioning page with cached network list
-
---- user submits credentials ---
-
-10. pkill hostapd
-11. sleep 2
-12. pkill dnsmasq
-13. ip addr flush dev wlan0
-14. nmcli dev set wlan0 managed yes
-15. poll until not unmanaged (up to 20s, retry managed every 5s)
-16. sleep 5                  ← radio reinitialize
-17. nmcli dev wifi rescan
-18. retry until SSID visible (4x, 5s gaps)
-19. nmcli con add (explicit profile with wpa-psk)
-20. nmcli con up
-21. poll for IP
-22. write /boot/firmware/network-config
-23. touch /etc/hvac-vibe/wifi-configured
-24. systemd starts hvac-engine
-</code></pre><hr>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>1. scan_networks()           ← while NM owns wlan0, BEFORE AP
+</span></span><span style="display:flex;"><span>2. pkill dnsmasq             ← kill any system instance
+</span></span><span style="display:flex;"><span>3. nmcli dev disconnect wlan0
+</span></span><span style="display:flex;"><span>4. nmcli dev set wlan0 managed no
+</span></span><span style="display:flex;"><span>5. ip addr add 192.168.4.1/24 dev wlan0
+</span></span><span style="display:flex;"><span>6. hostapd -B hostapd.conf
+</span></span><span style="display:flex;"><span>7. sleep 2
+</span></span><span style="display:flex;"><span>8. dnsmasq (with captive portal redirect)
+</span></span><span style="display:flex;"><span>9. Flask serves provisioning page with cached network list
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>--- user submits credentials ---
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>10. pkill hostapd
+</span></span><span style="display:flex;"><span>11. sleep 2
+</span></span><span style="display:flex;"><span>12. pkill dnsmasq
+</span></span><span style="display:flex;"><span>13. ip addr flush dev wlan0
+</span></span><span style="display:flex;"><span>14. nmcli dev set wlan0 managed yes
+</span></span><span style="display:flex;"><span>15. poll until not unmanaged (up to 20s, retry managed every 5s)
+</span></span><span style="display:flex;"><span>16. sleep 5                  ← radio reinitialize
+</span></span><span style="display:flex;"><span>17. nmcli dev wifi rescan
+</span></span><span style="display:flex;"><span>18. retry until SSID visible (4x, 5s gaps)
+</span></span><span style="display:flex;"><span>19. nmcli con add (explicit profile with wpa-psk)
+</span></span><span style="display:flex;"><span>20. nmcli con up
+</span></span><span style="display:flex;"><span>21. poll for IP
+</span></span><span style="display:flex;"><span>22. write /boot/firmware/network-config
+</span></span><span style="display:flex;"><span>23. touch /etc/hvac-vibe/wifi-configured
+</span></span><span style="display:flex;"><span>24. systemd starts hvac-engine
+</span></span></code></pre></div><hr>
 <h2 id="what-i-learned">What I Learned<a hidden class="anchor" aria-hidden="true" href="#what-i-learned">#</a></h2>
 <ul>
 <li><strong>Ubuntu cloud-init uses NetworkManager, not wpa_supplicant.</strong> Every command that
@@ -538,6 +543,13 @@ display integration) is in the HVAC-Vibe repository:</p>
       <li><a href="http://localhost:1313/tags/linux/">Linux</a></li>
       <li><a href="http://localhost:1313/tags/hvac-vibe/">Hvac-Vibe</a></li>
     </ul>
+<nav class="paginav">
+  <a class="prev" href="http://localhost:1313/posts/hvac-vibe-display/">
+    <span class="title">« Prev</span>
+    <br>
+    <span>HVAC-Vibe Display</span>
+  </a>
+</nav>
 
   </footer>
 </article>

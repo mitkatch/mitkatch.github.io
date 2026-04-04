@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>HVAC-Vibe: Cloudflare Tunnel Setup Guide | HVAC-Vibe</title>
+<meta name="keywords" content="raspberry-pi, ubuntu, networkmanager, hostapd, linux, Cloudflare">
+<meta name="description" content="the goal is: Expose the Pi Zero 2W FastAPI backend (`api.hvacvibe.ca`) to the internet via Cloudflare Tunnel — no port forwarding, no static IP required.">
+<meta name="author" content="Mikhail">
+<link rel="canonical" href="http://localhost:1313/posts/hvacvibe-cloudflare-tunnel-setup/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.deecb11b9e45294232c25b1a6a7ed0127117e51977f7ed5998550bd8e264b543.css" integrity="sha256-3uyxG55FKUIywlsaan7QEnEX5Rl39&#43;1ZmFUL2OJktUM=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/hvacvibe-cloudflare-tunnel-setup/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+                color-scheme: dark;
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .toc {
+                background: var(--entry);
+            }
+        }
+
+        @media (prefers-color-scheme: light) {
+            .list::-webkit-scrollbar-thumb {
+                border-color: var(--code-bg);
+            }
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else if (localStorage.getItem("pref-theme") === "light") {
+       document.querySelector("html").dataset.theme = 'light';
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else {
+        document.querySelector("html").dataset.theme = 'light';
+    }
+
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:1313/" accesskey="h" title="HVAC-Vibe (Alt + H)">HVAC-Vibe</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:1313/architecture/" title="Architecture">
+                    <span>Architecture</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/dashboard/" title="Dashboard">
+                    <span>Dashboard</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="http://localhost:1313/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:1313/posts/">Posts</a></div>
+    <h1 class="post-title entry-hint-parent">
+      HVAC-Vibe: Cloudflare Tunnel Setup Guide
+    </h1>
+    <div class="post-description">
+      the goal is: Expose the Pi Zero 2W FastAPI backend (`api.hvacvibe.ca`) to the internet via Cloudflare Tunnel — no port forwarding, no static IP required.
+    </div>
+    <div class="post-meta"><span title='2026-04-04 00:00:00 +0000 UTC'>April 4, 2026</span>&nbsp;·&nbsp;<span>8 min</span>&nbsp;·&nbsp;<span>Mikhail</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p><strong>Final architecture:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>nRF52840 (BLE)
+</span></span><span style="display:flex;"><span>      ↓
+</span></span><span style="display:flex;"><span>Pi Zero 2W  [hvac-engine → SQLite → FastAPI :8000]
+</span></span><span style="display:flex;"><span>      ↓
+</span></span><span style="display:flex;"><span>cloudflared daemon  (outbound tunnel only)
+</span></span><span style="display:flex;"><span>      ↓
+</span></span><span style="display:flex;"><span>Cloudflare Edge (YYZ — Toronto)
+</span></span><span style="display:flex;"><span>      ↓
+</span></span><span style="display:flex;"><span>https://api.hvacvibe.ca  (public internet)
+</span></span></code></pre></div><hr>
+<h2 id="part-1--cloudflare-account--domain">Part 1 — Cloudflare Account &amp; Domain<a hidden class="anchor" aria-hidden="true" href="#part-1--cloudflare-account--domain">#</a></h2>
+<h3 id="11-register-domain-via-cloudflare-registrar">1.1 Register domain via Cloudflare Registrar<a hidden class="anchor" aria-hidden="true" href="#11-register-domain-via-cloudflare-registrar">#</a></h3>
+<ul>
+<li>Go to <code>dash.cloudflare.com</code> → <strong>Domain Registration</strong> → <strong>Register Domains</strong></li>
+<li>Search and purchase <code>hvacvibe.ca</code></li>
+<li>DNS is automatically configured — no manual nameserver setup required</li>
+<li>A payment receipt is sent by email</li>
+</ul>
+<h3 id="12-locate-the-tunnels-section">1.2 Locate the Tunnels section<a hidden class="anchor" aria-hidden="true" href="#12-locate-the-tunnels-section">#</a></h3>
+<p>The Tunnels UI lives in the <strong>main Cloudflare dashboard</strong>, not inside Zero Trust.</p>
+<p><strong>Navigation path:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>dash.cloudflare.com → Networking → Tunnels
+</span></span></code></pre></div><blockquote>
+<p><strong>Note:</strong> The Zero Trust sidebar has a &ldquo;Networks&rdquo; section but it shows Connectors/Routes/Resolvers — not Tunnels. Do not use the Zero Trust onboarding wizard for this.</p>
+</blockquote>
+<h3 id="13-create-a-tunnel">1.3 Create a tunnel<a hidden class="anchor" aria-hidden="true" href="#13-create-a-tunnel">#</a></h3>
+<ol>
+<li>Go to <strong>Networking → Tunnels → Create a tunnel</strong></li>
+<li>Choose <strong>Cloudflared</strong> connector type</li>
+<li>Name the tunnel: <code>hvacvibe</code></li>
+<li>On the <strong>Setup Environment</strong> step:
+<ul>
+<li>OS: <strong>Debian</strong></li>
+<li>Architecture: <strong>ARM 32-bit</strong></li>
+</ul>
+</li>
+<li>The dashboard generates three commands:
+<ul>
+<li><strong>Install cloudflared</strong> — adds Cloudflare apt repo and installs the binary</li>
+<li><strong>Install as service</strong> — registers systemd service with token embedded ✅ use this one</li>
+<li><strong>Run tunnel (manual)</strong> — for one-off testing only, skip for production</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p><strong>Security notice:</strong> The token in these commands grants access to your Cloudflare account. Never share or commit it to version control.</p>
+</blockquote>
+<hr>
+<h2 id="part-2--install-cloudflared-on-the-pi">Part 2 — Install cloudflared on the Pi<a hidden class="anchor" aria-hidden="true" href="#part-2--install-cloudflared-on-the-pi">#</a></h2>
+<h3 id="21-run-the-install-commands">2.1 Run the install commands<a hidden class="anchor" aria-hidden="true" href="#21-run-the-install-commands">#</a></h3>
+<p>SSH into the Pi and run the two commands from the dashboard in order:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Step 1: Install cloudflared (copy exact command from dashboard)</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Adds Cloudflare GPG key, apt repo, and installs cloudflared</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Step 2: Install and enable as systemd service</span>
+</span></span><span style="display:flex;"><span>sudo cloudflared service install &lt;your-token-here&gt;
+</span></span></code></pre></div><h3 id="22-verify-service-status">2.2 Verify service status<a hidden class="anchor" aria-hidden="true" href="#22-verify-service-status">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo systemctl status cloudflared
+</span></span><span style="display:flex;"><span>journalctl -fu cloudflared.service
+</span></span></code></pre></div><p>Watch for <code>INF Connection established connIndex=0</code> lines. The Cloudflare dashboard Connection Status panel will flip from &ldquo;Waiting&hellip;&rdquo; to <strong>Healthy</strong> with a green indicator.</p>
+<hr>
+<h2 id="part-3--configure-public-hostname">Part 3 — Configure Public Hostname<a hidden class="anchor" aria-hidden="true" href="#part-3--configure-public-hostname">#</a></h2>
+<p>Once the tunnel shows <strong>Healthy</strong> in the dashboard:</p>
+<ol>
+<li>Click the tunnel name (<code>hvacvibe</code>)</li>
+<li>Go to the <strong>Public Hostname</strong> tab</li>
+<li>Click <strong>Add a public hostname</strong></li>
+</ol>
+<table>
+  <thead>
+      <tr>
+          <th>Field</th>
+          <th>Value</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Subdomain</td>
+          <td><code>api</code></td>
+      </tr>
+      <tr>
+          <td>Domain</td>
+          <td><code>hvacvibe.ca</code></td>
+      </tr>
+      <tr>
+          <td>Path</td>
+          <td><em>(leave empty)</em></td>
+      </tr>
+      <tr>
+          <td>Type</td>
+          <td><code>HTTP</code></td>
+      </tr>
+      <tr>
+          <td>Service URL</td>
+          <td><code>http://localhost:8000</code></td>
+      </tr>
+  </tbody>
+</table>
+<p>Save. This automatically creates a CNAME DNS record pointing <code>api.hvacvibe.ca</code> → the tunnel.</p>
+<h3 id="23-smoke-test">2.3 Smoke test<a hidden class="anchor" aria-hidden="true" href="#23-smoke-test">#</a></h3>
+<p>From any browser or terminal:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl https://api.hvacvibe.ca/docs
+</span></span></code></pre></div><p>FastAPI Swagger UI should load, confirming end-to-end connectivity.</p>
+<hr>
+<h2 id="part-4--troubleshooting">Part 4 — Troubleshooting<a hidden class="anchor" aria-hidden="true" href="#part-4--troubleshooting">#</a></h2>
+<p>This section documents every issue encountered during setup and how it was resolved.</p>
+<hr>
+<h3 id="issue-1-cloudflared-tunnel-login-callback-never-completes">Issue 1: <code>cloudflared tunnel login</code> callback never completes<a hidden class="anchor" aria-hidden="true" href="#issue-1-cloudflared-tunnel-login-callback-never-completes">#</a></h3>
+<p><strong>Symptom:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>INF Waiting for login...
+</span></span><span style="display:flex;"><span>INF Waiting for login...
+</span></span><span style="display:flex;"><span>^C
+</span></span><span style="display:flex;"><span>ls ~/.cloudflared/   # empty — no cert.pem generated
+</span></span></code></pre></div><p><strong>Cause:</strong> The browser auth flow works by Cloudflare sending a credential back to a callback URL that <code>cloudflared</code> is listening on. If the Pi is behind NAT and the callback URL isn&rsquo;t reachable from Cloudflare&rsquo;s servers, the cert is never delivered.</p>
+<p><strong>Fix:</strong> Skip the CLI login flow entirely. Use the <strong>token-based setup</strong> from the dashboard instead:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo cloudflared service install &lt;token-from-dashboard&gt;
+</span></span></code></pre></div><p>No <code>cert.pem</code> or <code>~/.cloudflared/</code> credentials are needed with the token approach.</p>
+<hr>
+<h3 id="issue-2-service-fails-immediately-after-install">Issue 2: Service fails immediately after install<a hidden class="anchor" aria-hidden="true" href="#issue-2-service-fails-immediately-after-install">#</a></h3>
+<p><strong>Symptom:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-ini" data-lang="ini"><span style="display:flex;"><span><span style="color:#a6e22e">systemctl [start cloudflared.service] returned with error code exit status 1</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">Job for cloudflared.service failed because the control process exited with error code.</span>
+</span></span></code></pre></div><p><strong>Diagnosis:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>journalctl -xeu cloudflared.service --no-pager | tail -30
+</span></span></code></pre></div><p><strong>Root cause:</strong> The tunnel had no Public Hostname configured yet. <code>cloudflared</code> connected to Cloudflare&rsquo;s network but received zero edge addresses because there were no routes defined.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>there are no free edge addresses left to resolve to
+</span></span></code></pre></div><p><strong>Fix:</strong> Add a Public Hostname in the dashboard (Part 3 above) before or immediately after installing the service.</p>
+<hr>
+<h3 id="issue-3-dns-resolution-of-argotunnelcom-fails">Issue 3: DNS resolution of <code>argotunnel.com</code> fails<a hidden class="anchor" aria-hidden="true" href="#issue-3-dns-resolution-of-argotunnelcom-fails">#</a></h3>
+<p><strong>Symptom in journal:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-ini" data-lang="ini"><span style="display:flex;"><span><span style="color:#a6e22e">ERR Failed to initialize DNS local resolver</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">error</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;lookup region1.v2.argotunnel.com: operation was canceled&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ERR initial tunnel connection failed</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">error</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;there are no free edge addresses left to resolve to&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">You requested 4 HA connections but I can give you at most 0.</span>
+</span></span></code></pre></div><p><strong>Diagnosis:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Test with explicit DNS server (works fine)</span>
+</span></span><span style="display:flex;"><span>dig region1.v2.argotunnel.com @1.1.1.1
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Returns 10 clean A records</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Test with system DNS (router)</span>
+</span></span><span style="display:flex;"><span>dig region1.v2.argotunnel.com
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Warning: Message parser reports malformed message packet.</span>
+</span></span></code></pre></div><p><strong>Root cause:</strong> The home router (<code>192.168.1.1</code>) returns a <strong>malformed DNS response</strong> for <code>argotunnel.com</code>. The system resolv.conf was pointing at the router. <code>cloudflared</code> uses the system DNS internally for its initial edge lookup, gets a corrupted packet, can&rsquo;t parse any IPs, and reports &ldquo;no free edge addresses.&rdquo;</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cat /etc/resolv.conf
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># nameserver 192.168.1.1   ← router returns malformed packets</span>
+</span></span></code></pre></div><p><strong>Fix:</strong> Override system DNS via NetworkManager to use Cloudflare&rsquo;s resolver:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Check active connection name</span>
+</span></span><span style="display:flex;"><span>nmcli con show --active
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Set DNS override (use your actual connection name)</span>
+</span></span><span style="display:flex;"><span>sudo nmcli con mod <span style="color:#e6db74">&#34;home-wifi&#34;</span> ipv4.dns <span style="color:#e6db74">&#34;1.1.1.1,8.8.8.8&#34;</span>
+</span></span><span style="display:flex;"><span>sudo nmcli con mod <span style="color:#e6db74">&#34;home-wifi&#34;</span> ipv4.ignore-auto-dns yes
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Apply without dropping WiFi</span>
+</span></span><span style="display:flex;"><span>sudo systemctl restart NetworkManager
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Verify</span>
+</span></span><span style="display:flex;"><span>cat /etc/resolv.conf
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Should show: nameserver 1.1.1.1</span>
+</span></span></code></pre></div><p><strong>Verify fix:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>dig region1.v2.argotunnel.com
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Should return 10 clean A records with no malformed packet warning</span>
+</span></span></code></pre></div><hr>
+<h3 id="issue-4-quic-protocol-blocked-by-router">Issue 4: QUIC protocol blocked by router<a hidden class="anchor" aria-hidden="true" href="#issue-4-quic-protocol-blocked-by-router">#</a></h3>
+<p><strong>Symptom:</strong> Even after DNS fix, tunnel still fails with same edge address error.</p>
+<p><strong>Diagnosis:</strong> <code>cloudflared</code> defaults to QUIC (UDP port 7844) which some home routers block.</p>
+<p><strong>Fix:</strong> Force TCP (http2) transport:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo tee /etc/systemd/system/cloudflared.service.d/override.conf <span style="color:#e6db74">&lt;&lt; &#39;EOF&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">[Service]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Environment=&#34;TUNNEL_DNS_UPSTREAM=https://1.1.1.1/dns-query,https://8.8.8.8/dns-query&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Environment=&#34;TUNNEL_TRANSPORT_PROTOCOL=http2&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>sudo systemctl daemon-reload
+</span></span><span style="display:flex;"><span>sudo systemctl restart cloudflared
+</span></span></code></pre></div><p>Confirm in journal:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>INF Initial protocol http2   ← was &#34;quic&#34; before
+</span></span><span style="display:flex;"><span>INF Connection established connIndex=0
+</span></span></code></pre></div><hr>
+<h3 id="issue-5-wifi-jumps-to-wrong-access-point">Issue 5: WiFi jumps to wrong access point<a hidden class="anchor" aria-hidden="true" href="#issue-5-wifi-jumps-to-wrong-access-point">#</a></h3>
+<p><strong>Symptom:</strong> After restarting NetworkManager, the Pi connected to <code>hvac-setup-dlink-7C7A</code> (the HVAC-Vibe setup AP) instead of the home WiFi.</p>
+<p><strong>Cause:</strong> The <code>hvac-setup</code> service was running with <code>hostapd</code>/<code>dnsmasq</code>, broadcasting its own AP. NetworkManager picked it up automatically.</p>
+<p><strong>Fix:</strong> Stop setup services first, then reconnect to home WiFi:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo systemctl stop hvac-setup
+</span></span><span style="display:flex;"><span>sudo systemctl stop hostapd
+</span></span><span style="display:flex;"><span>sudo systemctl stop dnsmasq
+</span></span><span style="display:flex;"><span>sudo nmcli con up <span style="color:#e6db74">&#34;home-wifi&#34;</span>
+</span></span></code></pre></div><hr>
+<h3 id="issue-6-ispdsl-outage-during-setup">Issue 6: ISP/DSL outage during setup<a hidden class="anchor" aria-hidden="true" href="#issue-6-ispdsl-outage-during-setup">#</a></h3>
+<p><strong>Symptom:</strong> Laptop lost internet connectivity while Pi changes were being made, causing concern that the Pi&rsquo;s nmcli commands broke the home network.</p>
+<p><strong>Root cause:</strong> Coincidental DSL line drop — the router&rsquo;s WAN status showed &ldquo;Internet is Offline&rdquo; with DSL in &ldquo;EstablishingLink&rdquo; state. Router admin page at <code>192.168.1.1</code> was still reachable, confirming local WiFi was unaffected.</p>
+<p><strong>Diagnosis:</strong> <code>nmcli con mod</code> only modifies the Pi&rsquo;s network profile. It cannot affect DSL line synchronization between the router and ISP.</p>
+<p><strong>Fix:</strong> Power cycle the router/modem. Wait 3–5 minutes for DSL to re-establish. Internet returned without any intervention on the Pi.</p>
+<hr>
+<h3 id="issue-7-systemd-resolved-not-available">Issue 7: <code>systemd-resolved</code> not available<a hidden class="anchor" aria-hidden="true" href="#issue-7-systemd-resolved-not-available">#</a></h3>
+<p><strong>Symptom:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo systemctl restart systemd-resolved
+</span></span><span style="display:flex;"><span>Failed to restart systemd-resolved.service: Unit systemd-resolved.service not found.
+</span></span></code></pre></div><p><strong>Cause:</strong> This Ubuntu install on the Pi does not include <code>systemd-resolved</code>.</p>
+<p><strong>Fix:</strong> Use NetworkManager directly (see Issue 3 fix above) instead of <code>/etc/systemd/resolved.conf</code>.</p>
+<hr>
+<h3 id="issue-8-cloudflared-tunnel-login-browser-tab-still-open">Issue 8: <code>cloudflared tunnel login</code> browser tab still open<a hidden class="anchor" aria-hidden="true" href="#issue-8-cloudflared-tunnel-login-browser-tab-still-open">#</a></h3>
+<p><strong>Symptom:</strong> An old browser tab from the failed <code>tunnel login</code> attempt showed &ldquo;Authorize Cloudflare Tunnel&rdquo; with <code>hvacvibe.ca</code> listed.</p>
+<p><strong>Resolution:</strong> This tab is harmless — close it. It&rsquo;s the stale OAuth flow from the CLI login attempt. The token-based service install does not use or require this authorization.</p>
+<hr>
+<h2 id="part-5--key-commands-reference">Part 5 — Key Commands Reference<a hidden class="anchor" aria-hidden="true" href="#part-5--key-commands-reference">#</a></h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Service management</span>
+</span></span><span style="display:flex;"><span>sudo systemctl status cloudflared
+</span></span><span style="display:flex;"><span>sudo systemctl restart cloudflared
+</span></span><span style="display:flex;"><span>sudo systemctl stop cloudflared
+</span></span><span style="display:flex;"><span>journalctl -fu cloudflared.service        <span style="color:#75715e"># live log</span>
+</span></span><span style="display:flex;"><span>journalctl -xeu cloudflared.service --no-pager | tail -50  <span style="color:#75715e"># recent log</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># DNS verification</span>
+</span></span><span style="display:flex;"><span>dig region1.v2.argotunnel.com             <span style="color:#75715e"># should return clean A records</span>
+</span></span><span style="display:flex;"><span>dig region1.v2.argotunnel.com @1.1.1.1   <span style="color:#75715e"># test against specific resolver</span>
+</span></span><span style="display:flex;"><span>cat /etc/resolv.conf                       <span style="color:#75715e"># check current DNS server</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Network</span>
+</span></span><span style="display:flex;"><span>nmcli con show --active                   <span style="color:#75715e"># current connections</span>
+</span></span><span style="display:flex;"><span>nmcli con show <span style="color:#e6db74">&#34;home-wifi&#34;</span> | grep -i dns  <span style="color:#75715e"># DNS settings on profile</span>
+</span></span><span style="display:flex;"><span>sudo nmcli con up <span style="color:#e6db74">&#34;home-wifi&#34;</span>             <span style="color:#75715e"># reconnect to home WiFi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Cloudflared override config</span>
+</span></span><span style="display:flex;"><span>cat /etc/systemd/system/cloudflared.service.d/override.conf
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Full reinstall sequence</span>
+</span></span><span style="display:flex;"><span>sudo cloudflared service uninstall
+</span></span><span style="display:flex;"><span>sudo cloudflared service install &lt;token&gt;
+</span></span><span style="display:flex;"><span>sudo systemctl start cloudflared
+</span></span></code></pre></div><hr>
+<h2 id="part-6--architecture-notes">Part 6 — Architecture Notes<a hidden class="anchor" aria-hidden="true" href="#part-6--architecture-notes">#</a></h2>
+<h3 id="why-token-based-install-instead-of-cloudflared-tunnel-login">Why token-based install instead of <code>cloudflared tunnel login</code><a hidden class="anchor" aria-hidden="true" href="#why-token-based-install-instead-of-cloudflared-tunnel-login">#</a></h3>
+<p>The CLI login flow requires Cloudflare to deliver a credential back to the Pi via a callback URL. Behind NAT this callback is unreachable. The token-based approach embeds credentials in the systemd service unit — no inbound connectivity needed at any point.</p>
+<h3 id="why-dns-matters-for-cloudflared">Why DNS matters for cloudflared<a hidden class="anchor" aria-hidden="true" href="#why-dns-matters-for-cloudflared">#</a></h3>
+<p><code>cloudflared</code> performs its own internal DNS resolution to find Cloudflare&rsquo;s edge IPs (<code>region1.v2.argotunnel.com</code> etc.) before establishing the tunnel. If system DNS returns malformed responses, <code>cloudflared</code> gets zero usable IPs and reports &ldquo;no free edge addresses&rdquo; — which looks like a tunnel or auth problem but is actually a DNS problem.</p>
+<h3 id="why-quic-may-fail-on-home-networks">Why QUIC may fail on home networks<a hidden class="anchor" aria-hidden="true" href="#why-quic-may-fail-on-home-networks">#</a></h3>
+<p>Cloudflare Tunnel defaults to QUIC (UDP port 7844) for performance. Many home routers block non-standard UDP or perform deep packet inspection that corrupts QUIC. Forcing <code>http2</code> uses standard TCP 443 which passes through any router that allows HTTPS.</p>
+<h3 id="dns-change-persistence-note">DNS change persistence note<a hidden class="anchor" aria-hidden="true" href="#dns-change-persistence-note">#</a></h3>
+<p>The <code>ipv4.ignore-auto-dns yes</code> setting on the NetworkManager profile persists across reboots. If the Pi ever switches networks (e.g., to a different WiFi), the static DNS <code>1.1.1.1</code> will still be used — which is generally desirable for <code>cloudflared</code> reliability.</p>
+<hr>
+<h2 id="part-7--next-steps">Part 7 — Next Steps<a hidden class="anchor" aria-hidden="true" href="#part-7--next-steps">#</a></h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>✅ Domain registered   — hvacvibe.ca
+</span></span><span style="display:flex;"><span>✅ Cloudflare Tunnel   — Healthy, YYZ edge, linux_arm64
+</span></span><span style="display:flex;"><span>✅ FastAPI exposed     — https://api.hvacvibe.ca/docs
+</span></span><span style="display:flex;"><span>⬜ WebSocket endpoint  — /ws/{sensor_id} for live data push
+</span></span><span style="display:flex;"><span>⬜ Hugo dashboard      — Cloudflare Pages deployment
+</span></span><span style="display:flex;"><span>⬜ Wire dashboard      — wss://api.hvacvibe.ca/ws to frontend charts
+</span></span></code></pre></div><p>Remaining work: add a FastAPI WebSocket endpoint, build the Hugo dashboard on Cloudflare Pages, and connect the two with a live sensor data stream.</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="http://localhost:1313/tags/raspberry-pi/">Raspberry-Pi</a></li>
+      <li><a href="http://localhost:1313/tags/ubuntu/">Ubuntu</a></li>
+      <li><a href="http://localhost:1313/tags/networkmanager/">Networkmanager</a></li>
+      <li><a href="http://localhost:1313/tags/hostapd/">Hostapd</a></li>
+      <li><a href="http://localhost:1313/tags/linux/">Linux</a></li>
+      <li><a href="http://localhost:1313/tags/cloudflare/">Cloudflare</a></li>
+    </ul>
+<nav class="paginav">
+  <a class="next" href="http://localhost:1313/posts/hvac-vibe-display/">
+    <span class="title">Next »</span>
+    <br>
+    <span>HVAC-Vibe Display</span>
+  </a>
+</nav>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2026 <a href="http://localhost:1313/">HVAC-Vibe</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>HVAC-Vibe Display | HVAC-Vibe</title>
+<meta name="keywords" content="raspberry-pi, pygame, waveshare, lcd, mqqt, hvac-vibe">
+<meta name="description" content="The display subsystem for HVAC-Vibe runs on a Waveshare 3.5 IPS LCD HAT attached to the Raspberry Pi Zero 2W gateway. It shows live vibration data, environmental readings, and a daily RMS trend chart — all rendered locally via pygame directly to the  framebuffer.">
+<meta name="author" content="Mikhail">
+<link rel="canonical" href="http://localhost:1313/posts/hvac-vibe-display/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.deecb11b9e45294232c25b1a6a7ed0127117e51977f7ed5998550bd8e264b543.css" integrity="sha256-3uyxG55FKUIywlsaan7QEnEX5Rl39&#43;1ZmFUL2OJktUM=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/hvac-vibe-display/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+                color-scheme: dark;
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .toc {
+                background: var(--entry);
+            }
+        }
+
+        @media (prefers-color-scheme: light) {
+            .list::-webkit-scrollbar-thumb {
+                border-color: var(--code-bg);
+            }
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else if (localStorage.getItem("pref-theme") === "light") {
+       document.querySelector("html").dataset.theme = 'light';
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else {
+        document.querySelector("html").dataset.theme = 'light';
+    }
+
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:1313/" accesskey="h" title="HVAC-Vibe (Alt + H)">HVAC-Vibe</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:1313/architecture/" title="Architecture">
+                    <span>Architecture</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/dashboard/" title="Dashboard">
+                    <span>Dashboard</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="http://localhost:1313/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:1313/posts/">Posts</a></div>
+    <h1 class="post-title entry-hint-parent">
+      HVAC-Vibe Display
+    </h1>
+    <div class="post-description">
+      The display subsystem for HVAC-Vibe runs on a Waveshare 3.5 IPS LCD HAT attached to the Raspberry Pi Zero 2W gateway. It shows live vibration data, environmental readings, and a daily RMS trend chart — all rendered locally via pygame directly to the  framebuffer.
+    </div>
+    <div class="post-meta"><span title='2026-04-03 00:00:00 +0000 UTC'>April 3, 2026</span>&nbsp;·&nbsp;<span>6 min</span>&nbsp;·&nbsp;<span>Mikhail</span>
+
+</div>
+  </header> 
+  <div class="post-content"><h2 id="requirements">Requirements<a hidden class="anchor" aria-hidden="true" href="#requirements">#</a></h2>
+<p><strong>Hardware</strong></p>
+<ul>
+<li>Raspberry Pi Zero 2W</li>
+<li>Waveshare 3.5&quot; IPS LCD (B) HAT — 480×320, SPI, <code>fb_ili9486</code> driver</li>
+<li>MicroSD card (16GB+)</li>
+</ul>
+<p><strong>Software</strong></p>
+<ul>
+<li>Ubuntu 22.04 (cloud-init image)</li>
+<li>Python 3.11+</li>
+<li>pygame 2.x</li>
+<li>numpy (RGB565 framebuffer conversion)</li>
+<li>paho-mqtt (data feed from hvac-engine)</li>
+</ul>
+<p><strong>Python packages</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>pip install pygame numpy paho-mqtt
+</span></span></code></pre></div><hr>
+<h2 id="installing-the-waveshare-35-lcd-b-hat">Installing the Waveshare 3.5&quot; LCD (B) HAT<a hidden class="anchor" aria-hidden="true" href="#installing-the-waveshare-35-lcd-b-hat">#</a></h2>
+<h3 id="1-install-the-driver">1. Install the driver<a hidden class="anchor" aria-hidden="true" href="#1-install-the-driver">#</a></h3>
+<p>Waveshare provides a driver installer script. Clone their repo and run it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git clone https://github.com/waveshare/LCD-show.git ~/LCD-show
+</span></span><span style="display:flex;"><span>cd ~/LCD-show
+</span></span><span style="display:flex;"><span>sed -i <span style="color:#e6db74">&#39;s/\r//&#39;</span> LCD35B-show-V2     <span style="color:#75715e"># fix Windows line endings if present</span>
+</span></span><span style="display:flex;"><span>sudo ./LCD35B-show-V2               <span style="color:#75715e"># installs driver and reboots automatically</span>
+</span></span></code></pre></div><p>After reboot the LCD registers as <code>/dev/fb0</code> (primary framebuffer) via the
+<code>fb_ili9486</code> kernel module.</p>
+<h3 id="2-disable-the-touch-controller-overlay-gpio-conflict">2. Disable the touch controller overlay (GPIO conflict)<a hidden class="anchor" aria-hidden="true" href="#2-disable-the-touch-controller-overlay-gpio-conflict">#</a></h3>
+<p>The ADS7846 touch overlay shares GPIO17 with the display driver, causing an
+initialization conflict. Since hvac-pygame doesn&rsquo;t use touch, disable it:</p>
+<p>Edit <code>/boot/firmware/config.txt</code> and comment out:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-ini" data-lang="ini"><span style="display:flex;"><span><span style="color:#75715e"># dtoverlay=ads7846,speed=2000000,penirq=17,...</span>
+</span></span></code></pre></div><p>Reboot for the change to take effect.</p>
+<h3 id="3-create-a-stable-udev-symlink">3. Create a stable udev symlink<a hidden class="anchor" aria-hidden="true" href="#3-create-a-stable-udev-symlink">#</a></h3>
+<p>The kernel assigns framebuffer numbers non-deterministically at boot — the LCD
+can appear as <code>fb0</code> or <code>fb1</code> depending on driver initialization order. A udev
+rule creates a stable <code>/dev/waveshare</code> symlink regardless of which number is
+assigned:</p>
+<p>Create <code>/etc/udev/rules.d/99-waveshare.rules</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-ini" data-lang="ini"><span style="display:flex;"><span><span style="color:#a6e22e">SUBSYSTEM</span><span style="color:#f92672">=</span><span style="color:#e6db74">=&#34;graphics&#34;, KERNEL==&#34;fb*&#34;, ATTR{name}==&#34;fb_ili9486&#34;, SYMLINK+=&#34;waveshare&#34;</span>
+</span></span></code></pre></div><p>Reload udev:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo udevadm control --reload-rules
+</span></span><span style="display:flex;"><span>sudo udevadm trigger
+</span></span><span style="display:flex;"><span>ls -la /dev/waveshare   <span style="color:#75715e"># should show -&gt; fb0 or -&gt; fb1</span>
+</span></span></code></pre></div><p>Then set <code>fb_device</code> in <code>config.py</code> to <code>/dev/waveshare</code> instead of a hardcoded
+device path.</p>
+<h3 id="4-prevent-the-os-from-claiming-the-framebuffer-on-boot">4. Prevent the OS from claiming the framebuffer on boot<a hidden class="anchor" aria-hidden="true" href="#4-prevent-the-os-from-claiming-the-framebuffer-on-boot">#</a></h3>
+<p>By default the kernel sends boot messages and the getty login prompt to <code>fb0</code>,
+which overwrites the display before pygame starts. Two things suppress this:</p>
+<p><strong>Suppress kernel console output on the LCD</strong> — add to <code>/boot/firmware/cmdline.txt</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-ini" data-lang="ini"><span style="display:flex;"><span><span style="color:#a6e22e">fbcon</span><span style="color:#f92672">=</span><span style="color:#e6db74">map:1 fbcon=font:VGA8x8</span>
+</span></span></code></pre></div><p>This redirects the framebuffer console to a non-existent display, leaving <code>fb0</code>
+free for pygame.</p>
+<p><strong>Suppress getty on fb0</strong> — mask the relevant service:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo systemctl mask getty@tty1.service
+</span></span></code></pre></div><h3 id="5-run-the-service-as-root">5. Run the service as root<a hidden class="anchor" aria-hidden="true" href="#5-run-the-service-as-root">#</a></h3>
+<p>The <code>fb_ili9486</code> driver creates the framebuffer device as <code>root:root 644</code>. The
+udev group rule does not stick because DRM recreates the device node after udev
+runs. The simplest fix is to run <code>hvac-pygame.service</code> as root:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-ini" data-lang="ini"><span style="display:flex;"><span><span style="color:#66d9ef">[Service]</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">User</span><span style="color:#f92672">=</span><span style="color:#e6db74">root</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ExecStartPre</span><span style="color:#f92672">=</span><span style="color:#e6db74">/bin/bash -c &#39;until [ -c &#34;$(readlink -f /dev/waveshare)&#34; ]; do sleep 1; done&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ExecStart</span><span style="color:#f92672">=</span><span style="color:#e6db74">/home/mitkatch/hvac-pygame/venv/bin/python main.py</span>
+</span></span></code></pre></div><p>The <code>ExecStartPre</code> line polls until <code>/dev/waveshare</code> resolves to a character
+device, handling the race condition where pygame starts before the driver
+initializes.</p>
+<h3 id="framebuffer-rendering">Framebuffer rendering<a hidden class="anchor" aria-hidden="true" href="#framebuffer-rendering">#</a></h3>
+<p>pygame&rsquo;s <code>SDL_VIDEODRIVER=fbcon</code> was removed in SDL2. The display writes pixels
+directly to the framebuffer using <code>offscreen</code> SDL mode with a manual flush:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>os<span style="color:#f92672">.</span>environ[<span style="color:#e6db74">&#39;SDL_VIDEODRIVER&#39;</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;offscreen&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">flush_to_fb</span>(surface):
+</span></span><span style="display:flex;"><span>    rotated <span style="color:#f92672">=</span> pygame<span style="color:#f92672">.</span>transform<span style="color:#f92672">.</span>rotate(surface, DISPLAY[<span style="color:#e6db74">&#34;rotate&#34;</span>])
+</span></span><span style="display:flex;"><span>    raw <span style="color:#f92672">=</span> pygame<span style="color:#f92672">.</span>image<span style="color:#f92672">.</span>tostring(rotated, <span style="color:#e6db74">&#39;RGB&#39;</span>)
+</span></span><span style="display:flex;"><span>    px  <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>frombuffer(raw, dtype<span style="color:#f92672">=</span>np<span style="color:#f92672">.</span>uint8)<span style="color:#f92672">.</span>reshape(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">3</span>)
+</span></span><span style="display:flex;"><span>    r, g, b <span style="color:#f92672">=</span> px[:,<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>astype(np<span style="color:#f92672">.</span>uint16), px[:,<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>astype(np<span style="color:#f92672">.</span>uint16), px[:,<span style="color:#ae81ff">2</span>]<span style="color:#f92672">.</span>astype(np<span style="color:#f92672">.</span>uint16)
+</span></span><span style="display:flex;"><span>    rgb565 <span style="color:#f92672">=</span> ((r <span style="color:#f92672">&amp;</span> <span style="color:#ae81ff">0xF8</span>) <span style="color:#f92672">&lt;&lt;</span> <span style="color:#ae81ff">8</span>) <span style="color:#f92672">|</span> ((g <span style="color:#f92672">&amp;</span> <span style="color:#ae81ff">0xFC</span>) <span style="color:#f92672">&lt;&lt;</span> <span style="color:#ae81ff">3</span>) <span style="color:#f92672">|</span> (b <span style="color:#f92672">&gt;&gt;</span> <span style="color:#ae81ff">3</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">with</span> open(DISPLAY[<span style="color:#e6db74">&#34;fb_device&#34;</span>], <span style="color:#e6db74">&#39;wb&#39;</span>) <span style="color:#66d9ef">as</span> f:
+</span></span><span style="display:flex;"><span>        f<span style="color:#f92672">.</span>write(rgb565<span style="color:#f92672">.</span>astype(<span style="color:#e6db74">&#39;&lt;u2&#39;</span>)<span style="color:#f92672">.</span>tobytes())
+</span></span></code></pre></div><p>Each frame is rendered offscreen, converted from RGB888 to RGB565
+(the native format of the LCD controller), then written directly to the
+framebuffer device. numpy vectorizes the pixel conversion — a pure Python
+loop over 153,600 pixels would be too slow at 5 fps.</p>
+<hr>
+<h2 id="pygame-vs-react-kiosk">pygame vs React Kiosk<a hidden class="anchor" aria-hidden="true" href="#pygame-vs-react-kiosk">#</a></h2>
+<p>Before settling on pygame we evaluated running a Chromium kiosk serving a
+React dashboard via a local FastAPI/WebSocket backend.</p>
+<table>
+  <thead>
+      <tr>
+          <th></th>
+          <th>pygame</th>
+          <th>React + Chromium kiosk</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>RAM usage</td>
+          <td>~40 MB</td>
+          <td>~250–400 MB</td>
+      </tr>
+      <tr>
+          <td>CPU at idle</td>
+          <td>&lt;5%</td>
+          <td>15–25%</td>
+      </tr>
+      <tr>
+          <td>Boot to display</td>
+          <td>~3s</td>
+          <td>~20–30s</td>
+      </tr>
+      <tr>
+          <td>GPU dependency</td>
+          <td>None — software render</td>
+          <td>Requires GPU / DRM</td>
+      </tr>
+      <tr>
+          <td>Network dependency</td>
+          <td>MQTT (local)</td>
+          <td>WebSocket (local HTTP)</td>
+      </tr>
+      <tr>
+          <td>Offline operation</td>
+          <td>Full</td>
+          <td>Full (once loaded)</td>
+      </tr>
+      <tr>
+          <td>Development speed</td>
+          <td>Slower — draw calls</td>
+          <td>Faster — HTML/CSS</td>
+      </tr>
+      <tr>
+          <td>Mobile access</td>
+          <td>No</td>
+          <td>Yes (browser)</td>
+      </tr>
+      <tr>
+          <td>Pi Zero 2W viability</td>
+          <td>Excellent</td>
+          <td>Marginal — OOM risk</td>
+      </tr>
+  </tbody>
+</table>
+<p>On the Pi Zero 2W with 512MB RAM, Chromium routinely triggered the OOM killer
+under moderate load. pygame with direct framebuffer write uses a fraction of the
+memory and starts in seconds. The tradeoff is lower-level rendering code — every
+label, tile, and chart is drawn with explicit coordinates rather than CSS layout.</p>
+<p>The React kiosk approach is still viable for Pi 4 class hardware where memory
+and GPU access are not constraints.</p>
+<hr>
+<h2 id="display-design">Display Design<a hidden class="anchor" aria-hidden="true" href="#display-design">#</a></h2>
+<p>The display uses an adaptive layout engine that switches between four modes
+based on the number of active sensors:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>1 sensor  → Full screen: header + 5 metric tiles + daily RMS chart
+</span></span><span style="display:flex;"><span>2 sensors → Split screen: compact row per sensor with sparkline
+</span></span><span style="display:flex;"><span>3-4       → 2×2 grid: tile + mini sparkline per cell
+</span></span><span style="display:flex;"><span>5+        → List view: one row per sensor, 8 visible
+</span></span></code></pre></div><p><strong>Single sensor layout (most common)</strong></p>
+<p><img alt="HVAC-Vibe single sensor display" loading="lazy" src="/images/hvac-display.png"></p>
+<p><strong>Chart features</strong></p>
+<ul>
+<li>Daily RMS trend for the current day (minute-resolution from SQLite)</li>
+<li>Alarm threshold line in red</li>
+<li>NOW marker showing current time position</li>
+<li>Future region dimmed with a semi-transparent overlay</li>
+<li>Last value annotated at the current point</li>
+</ul>
+<p><strong>Color palette</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>C_BG         <span style="color:#f92672">=</span> (<span style="color:#ae81ff">18</span>,  <span style="color:#ae81ff">22</span>,  <span style="color:#ae81ff">28</span>)   <span style="color:#75715e"># near-black background</span>
+</span></span><span style="display:flex;"><span>C_ACCENT     <span style="color:#f92672">=</span> (<span style="color:#ae81ff">0</span>,  <span style="color:#ae81ff">160</span>, <span style="color:#ae81ff">220</span>)   <span style="color:#75715e"># cyan — primary labels, HVAC-Vibe brand</span>
+</span></span><span style="display:flex;"><span>C_GREEN      <span style="color:#f92672">=</span> (<span style="color:#ae81ff">0</span>,  <span style="color:#ae81ff">200</span>, <span style="color:#ae81ff">100</span>)   <span style="color:#75715e"># connected / healthy</span>
+</span></span><span style="display:flex;"><span>C_YELLOW     <span style="color:#f92672">=</span> (<span style="color:#ae81ff">255</span>, <span style="color:#ae81ff">190</span>,   <span style="color:#ae81ff">0</span>)  <span style="color:#75715e"># temperature, peak values</span>
+</span></span><span style="display:flex;"><span>C_RED        <span style="color:#f92672">=</span> (<span style="color:#ae81ff">220</span>,  <span style="color:#ae81ff">50</span>,  <span style="color:#ae81ff">50</span>)  <span style="color:#75715e"># alarm, disconnected</span>
+</span></span><span style="display:flex;"><span>C_CHART_LINE <span style="color:#f92672">=</span> (<span style="color:#ae81ff">0</span>,  <span style="color:#ae81ff">180</span>, <span style="color:#ae81ff">255</span>)   <span style="color:#75715e"># vibration RMS line</span>
+</span></span><span style="display:flex;"><span>C_NOW_LINE   <span style="color:#f92672">=</span> (<span style="color:#ae81ff">255</span>, <span style="color:#ae81ff">220</span>,  <span style="color:#ae81ff">60</span>)  <span style="color:#75715e"># current time marker</span>
+</span></span></code></pre></div><hr>
+<h2 id="data-feed--mqtt">Data Feed — MQTT<a hidden class="anchor" aria-hidden="true" href="#data-feed--mqtt">#</a></h2>
+<p>The display has no direct dependency on BLE, SQLite, or the engine internals.
+It consumes data exclusively via MQTT from a local Mosquitto broker, through
+a lightweight <code>MQTTStore</code> that mirrors the <code>DataStore</code> interface.</p>
+<p><strong>Topic subscriptions</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>hvac/{gateway_id}/{sensor_id}/status              ← connection, battery, rssi
+</span></span><span style="display:flex;"><span>hvac/{gateway_id}/{sensor_id}/vibration/features  ← rms, peak, dominant_hz
+</span></span><span style="display:flex;"><span>hvac/{gateway_id}/{sensor_id}/environment         ← temp, humidity, pressure
+</span></span><span style="display:flex;"><span>hvac/{gateway_id}/{sensor_id}/alert               ← alarm state changes
+</span></span></code></pre></div><p><strong>Data flow</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>nRF52840 sensor
+</span></span><span style="display:flex;"><span>    ↓  BLE
+</span></span><span style="display:flex;"><span>Raspberry Pi Zero 2W
+</span></span><span style="display:flex;"><span>    ↓  hvac-engine (Python/bleak)
+</span></span><span style="display:flex;"><span>    ↓  MQTT publish → Mosquitto (localhost:1883)
+</span></span><span style="display:flex;"><span>    ↓  mqtt_store.py subscribes to hvac/#
+</span></span><span style="display:flex;"><span>    ↓  SensorState objects updated in memory
+</span></span><span style="display:flex;"><span>    ↓  display.py reads store on each frame
+</span></span><span style="display:flex;"><span>    ↓  flush_to_fb() → /dev/waveshare → LCD
+</span></span></code></pre></div><p><strong><code>mqtt_store.py</code></strong> is a drop-in replacement for the original <code>data_store.py</code>.
+It subclasses <code>DataStore</code> and populates <code>SensorState</code> objects from MQTT messages
+rather than direct BLE reads. This decouples the display completely from the
+data collection layer — the display works identically whether driven by real
+sensors, simulation mode, or replayed data.</p>
+<p>The <code>status</code> topic is published with <code>retain=True</code> so the display immediately
+shows the last known sensor state on connect, without waiting for the next
+BLE burst (which arrives every ~10 seconds).</p>
+<hr>
+<h2 id="taking-a-screenshot">Taking a Screenshot<a hidden class="anchor" aria-hidden="true" href="#taking-a-screenshot">#</a></h2>
+<p>To capture what&rsquo;s on the display:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># On the Pi</span>
+</span></span><span style="display:flex;"><span>sudo cat /dev/fb0 &gt; /tmp/screenshot.raw
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-powershell" data-lang="powershell"><span style="display:flex;"><span><span style="color:#75715e"># On Windows — pull the raw file</span>
+</span></span><span style="display:flex;"><span>scp mitkatch@hvacvibe.local<span style="color:#960050;background-color:#1e0010">:</span>/tmp/screenshot.raw .
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># Convert RGB565 raw to PNG</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> PIL <span style="color:#f92672">import</span> Image
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>data <span style="color:#f92672">=</span> open(<span style="color:#e6db74">&#34;screenshot.raw&#34;</span>, <span style="color:#e6db74">&#34;rb&#34;</span>)<span style="color:#f92672">.</span>read()
+</span></span><span style="display:flex;"><span>arr  <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>frombuffer(data, dtype<span style="color:#f92672">=</span>np<span style="color:#f92672">.</span>uint16)<span style="color:#f92672">.</span>reshape((<span style="color:#ae81ff">320</span>, <span style="color:#ae81ff">480</span>))
+</span></span><span style="display:flex;"><span>r <span style="color:#f92672">=</span> ((arr <span style="color:#f92672">&amp;</span> <span style="color:#ae81ff">0xF800</span>) <span style="color:#f92672">&gt;&gt;</span> <span style="color:#ae81ff">11</span>) <span style="color:#f92672">&lt;&lt;</span> <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span>g <span style="color:#f92672">=</span> ((arr <span style="color:#f92672">&amp;</span> <span style="color:#ae81ff">0x07E0</span>) <span style="color:#f92672">&gt;&gt;</span> <span style="color:#ae81ff">5</span>)  <span style="color:#f92672">&lt;&lt;</span> <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>b <span style="color:#f92672">=</span> (arr  <span style="color:#f92672">&amp;</span> <span style="color:#ae81ff">0x001F</span>)        <span style="color:#f92672">&lt;&lt;</span> <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span>Image<span style="color:#f92672">.</span>fromarray(np<span style="color:#f92672">.</span>stack([r, g, b], axis<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>)<span style="color:#f92672">.</span>astype(np<span style="color:#f92672">.</span>uint8))<span style="color:#f92672">.</span>save(<span style="color:#e6db74">&#34;display.png&#34;</span>)
+</span></span></code></pre></div>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="http://localhost:1313/tags/raspberry-pi/">Raspberry-Pi</a></li>
+      <li><a href="http://localhost:1313/tags/pygame/">Pygame</a></li>
+      <li><a href="http://localhost:1313/tags/waveshare/">Waveshare</a></li>
+      <li><a href="http://localhost:1313/tags/lcd/">Lcd</a></li>
+      <li><a href="http://localhost:1313/tags/mqqt/">Mqqt</a></li>
+      <li><a href="http://localhost:1313/tags/hvac-vibe/">Hvac-Vibe</a></li>
+    </ul>
+<nav class="paginav">
+  <a class="prev" href="http://localhost:1313/posts/hvacvibe-cloudflare-tunnel-setup/">
+    <span class="title">« Prev</span>
+    <br>
+    <span>HVAC-Vibe: Cloudflare Tunnel Setup Guide</span>
+  </a>
+  <a class="next" href="http://localhost:1313/posts/wifi-provisioning-post/">
+    <span class="title">Next »</span>
+    <br>
+    <span>WiFi Provisioning on Raspberry Pi Zero 2W with Ubuntu — The NetworkManager Way</span>
+  </a>
+</nav>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2026 <a href="http://localhost:1313/">HVAC-Vibe</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

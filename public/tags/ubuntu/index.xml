@@ -6,8 +6,15 @@
     <description>Recent content in Ubuntu on HVAC-Vibe</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 27 Mar 2026 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 04 Apr 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="http://localhost:1313/tags/ubuntu/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>HVAC-Vibe: Cloudflare Tunnel Setup Guide</title>
+      <link>http://localhost:1313/posts/hvacvibe-cloudflare-tunnel-setup/</link>
+      <pubDate>Sat, 04 Apr 2026 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/hvacvibe-cloudflare-tunnel-setup/</guid>
+      <description>the goal is: Expose the Pi Zero 2W FastAPI backend (`api.hvacvibe.ca`) to the internet via Cloudflare Tunnel — no port forwarding, no static IP required.</description>
+    </item>
     <item>
       <title>WiFi Provisioning on Raspberry Pi Zero 2W with Ubuntu — The NetworkManager Way</title>
       <link>http://localhost:1313/posts/wifi-provisioning-post/</link>

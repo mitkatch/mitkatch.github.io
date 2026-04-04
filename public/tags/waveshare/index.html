@@ -5,11 +5,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="robots" content="noindex, nofollow">
-<title>Linux | HVAC-Vibe</title>
+<title>Waveshare | HVAC-Vibe</title>
 <meta name="keywords" content="">
 <meta name="description" content="Embedded systems, IIoT, and hardware engineering">
 <meta name="author" content="Mikhail">
-<link rel="canonical" href="http://localhost:1313/tags/linux/">
+<link rel="canonical" href="http://localhost:1313/tags/waveshare/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.deecb11b9e45294232c25b1a6a7ed0127117e51977f7ed5998550bd8e264b543.css" integrity="sha256-3uyxG55FKUIywlsaan7QEnEX5Rl39&#43;1ZmFUL2OJktUM=" rel="preload stylesheet" as="style">
 <link rel="icon" href="http://localhost:1313/favicon.ico">
 <link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
@@ -18,8 +18,8 @@
 <link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<link rel="alternate" type="application/rss+xml" href="http://localhost:1313/tags/linux/index.xml" title="rss">
-<link rel="alternate" hreflang="en" href="http://localhost:1313/tags/linux/">
+<link rel="alternate" type="application/rss+xml" href="http://localhost:1313/tags/waveshare/index.xml" title="rss">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/tags/waveshare/">
 <noscript>
     <style>
         #theme-toggle,
@@ -123,36 +123,25 @@
 <main class="main"> 
 <header class="page-header"><div class="breadcrumbs"><a href="http://localhost:1313/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:1313/tags/">Tags</a></div>
   <h1>
-    Linux
+    Waveshare
   </h1>
 </header>
 
 <article class="post-entry tag-entry"> 
   <header class="entry-header">
-    <h2 class="entry-hint-parent">HVAC-Vibe: Cloudflare Tunnel Setup Guide
+    <h2 class="entry-hint-parent">HVAC-Vibe Display
     </h2>
   </header>
   <div class="entry-content">
-    <p>Final architecture:
-nRF52840 (BLE) ↓ Pi Zero 2W [hvac-engine → SQLite → FastAPI :8000] ↓ cloudflared daemon (outbound tunnel only) ↓ Cloudflare Edge (YYZ — Toronto) ↓ https://api.hvacvibe.ca (public internet) Part 1 — Cloudflare Account &amp; Domain 1.1 Register domain via Cloudflare Registrar Go to dash.cloudflare.com → Domain Registration → Register Domains Search and purchase hvacvibe.ca DNS is automatically configured — no manual nameserver setup required A payment receipt is sent by email 1.2 Locate the Tunnels section The Tunnels UI lives in the main Cloudflare dashboard, not inside Zero Trust.
+    <p>Requirements Hardware
+Raspberry Pi Zero 2W Waveshare 3.5&#34; IPS LCD (B) HAT — 480×320, SPI, fb_ili9486 driver MicroSD card (16GB&#43;) Software
+Ubuntu 22.04 (cloud-init image) Python 3.11&#43; pygame 2.x numpy (RGB565 framebuffer conversion) paho-mqtt (data feed from hvac-engine) Python packages
+pip install pygame numpy paho-mqtt Installing the Waveshare 3.5&#34; LCD (B) HAT 1. Install the driver Waveshare provides a driver installer script. Clone their repo and run it:
+git clone https://github.com/waveshare/LCD-show.git ~/LCD-show cd ~/LCD-show sed -i &#39;s/\r//&#39; LCD35B-show-V2 # fix Windows line endings if present sudo ./LCD35B-show-V2 # installs driver and reboots automatically After reboot the LCD registers as /dev/fb0 (primary framebuffer) via the fb_ili9486 kernel module.
 ...</p>
   </div>
-  <footer class="entry-footer"><span title='2026-04-04 00:00:00 +0000 UTC'>April 4, 2026</span>&nbsp;·&nbsp;<span>8 min</span>&nbsp;·&nbsp;<span>Mikhail</span></footer>
-  <a class="entry-link" aria-label="post link to HVAC-Vibe: Cloudflare Tunnel Setup Guide" href="http://localhost:1313/posts/hvacvibe-cloudflare-tunnel-setup/"></a>
-</article>
-
-<article class="post-entry tag-entry"> 
-  <header class="entry-header">
-    <h2 class="entry-hint-parent">WiFi Provisioning on Raspberry Pi Zero 2W with Ubuntu — The NetworkManager Way
-    </h2>
-  </header>
-  <div class="entry-content">
-    <p>The HVAC-Vibe gateway is a headless Raspberry Pi Zero 2W. No screen, no keyboard, no ethernet. It needs to join a customer’s WiFi network on first boot without any manual SSH configuration. The standard solution is a captive portal: Pi broadcasts its own access point, user connects their phone, picks a network, enters a password, Pi joins it and starts working.
-Every tutorial I found assumed Raspbian and wpa_supplicant. My image is Ubuntu cloud-init with NetworkManager. Completely different tools, different behavior, and every one of those tutorials silently fails in ways that are hard to debug on a headless device.
-...</p>
-  </div>
-  <footer class="entry-footer"><span title='2026-03-27 00:00:00 +0000 UTC'>March 27, 2026</span>&nbsp;·&nbsp;<span>13 min</span>&nbsp;·&nbsp;<span>Mikhail</span></footer>
-  <a class="entry-link" aria-label="post link to WiFi Provisioning on Raspberry Pi Zero 2W with Ubuntu — The NetworkManager Way" href="http://localhost:1313/posts/wifi-provisioning-post/"></a>
+  <footer class="entry-footer"><span title='2026-04-03 00:00:00 +0000 UTC'>April 3, 2026</span>&nbsp;·&nbsp;<span>6 min</span>&nbsp;·&nbsp;<span>Mikhail</span></footer>
+  <a class="entry-link" aria-label="post link to HVAC-Vibe Display" href="http://localhost:1313/posts/hvac-vibe-display/"></a>
 </article>
     </main>
     

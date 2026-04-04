@@ -6,8 +6,29 @@
     <description>Recent content on HVAC-Vibe</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 27 Mar 2026 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 04 Apr 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>HVAC-Vibe Live Dashboard</title>
+      <link>http://localhost:1313/dashboard/</link>
+      <pubDate>Sat, 04 Apr 2026 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/dashboard/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>HVAC-Vibe: Cloudflare Tunnel Setup Guide</title>
+      <link>http://localhost:1313/posts/hvacvibe-cloudflare-tunnel-setup/</link>
+      <pubDate>Sat, 04 Apr 2026 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/hvacvibe-cloudflare-tunnel-setup/</guid>
+      <description>the goal is: Expose the Pi Zero 2W FastAPI backend (`api.hvacvibe.ca`) to the internet via Cloudflare Tunnel — no port forwarding, no static IP required.</description>
+    </item>
+    <item>
+      <title>HVAC-Vibe Display</title>
+      <link>http://localhost:1313/posts/hvac-vibe-display/</link>
+      <pubDate>Fri, 03 Apr 2026 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/hvac-vibe-display/</guid>
+      <description>The display subsystem for HVAC-Vibe runs on a Waveshare 3.5 IPS LCD HAT attached to the Raspberry Pi Zero 2W gateway. It shows live vibration data, environmental readings, and a daily RMS trend chart — all rendered locally via pygame directly to the  framebuffer.</description>
+    </item>
     <item>
       <title>HVAC-Vibe Architecture</title>
       <link>http://localhost:1313/architecture/</link>

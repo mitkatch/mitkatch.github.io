@@ -50,3 +50,9 @@ enableEmoji = true
   name = "Posts"
   url = "/posts/"
   weight = 20
+
+[[menu.main]]
+  name = "Dashboard"
+  url = "/dashboard/"
+  weight = 30
+  

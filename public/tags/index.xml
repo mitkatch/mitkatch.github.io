@@ -6,48 +6,83 @@
     <description>Recent content in Tags on HVAC-Vibe</description>
     <generator>Hugo</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 27 Mar 2026 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 04 Apr 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Hostapd</title>
-      <link>http://localhost:1313/tags/hostapd/</link>
-      <pubDate>Fri, 27 Mar 2026 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/tags/hostapd/</guid>
+      <title>Cloudflare</title>
+      <link>http://localhost:1313/tags/cloudflare/</link>
+      <pubDate>Sat, 04 Apr 2026 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/tags/cloudflare/</guid>
       <description></description>
     </item>
     <item>
-      <title>Hvac-Vibe</title>
-      <link>http://localhost:1313/tags/hvac-vibe/</link>
-      <pubDate>Fri, 27 Mar 2026 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/tags/hvac-vibe/</guid>
+      <title>Hostapd</title>
+      <link>http://localhost:1313/tags/hostapd/</link>
+      <pubDate>Sat, 04 Apr 2026 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/tags/hostapd/</guid>
       <description></description>
     </item>
     <item>
       <title>Linux</title>
       <link>http://localhost:1313/tags/linux/</link>
-      <pubDate>Fri, 27 Mar 2026 00:00:00 +0000</pubDate>
+      <pubDate>Sat, 04 Apr 2026 00:00:00 +0000</pubDate>
       <guid>http://localhost:1313/tags/linux/</guid>
       <description></description>
     </item>
     <item>
       <title>Networkmanager</title>
       <link>http://localhost:1313/tags/networkmanager/</link>
-      <pubDate>Fri, 27 Mar 2026 00:00:00 +0000</pubDate>
+      <pubDate>Sat, 04 Apr 2026 00:00:00 +0000</pubDate>
       <guid>http://localhost:1313/tags/networkmanager/</guid>
       <description></description>
     </item>
     <item>
       <title>Raspberry-Pi</title>
       <link>http://localhost:1313/tags/raspberry-pi/</link>
-      <pubDate>Fri, 27 Mar 2026 00:00:00 +0000</pubDate>
+      <pubDate>Sat, 04 Apr 2026 00:00:00 +0000</pubDate>
       <guid>http://localhost:1313/tags/raspberry-pi/</guid>
       <description></description>
     </item>
     <item>
       <title>Ubuntu</title>
       <link>http://localhost:1313/tags/ubuntu/</link>
-      <pubDate>Fri, 27 Mar 2026 00:00:00 +0000</pubDate>
+      <pubDate>Sat, 04 Apr 2026 00:00:00 +0000</pubDate>
       <guid>http://localhost:1313/tags/ubuntu/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Hvac-Vibe</title>
+      <link>http://localhost:1313/tags/hvac-vibe/</link>
+      <pubDate>Fri, 03 Apr 2026 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/tags/hvac-vibe/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Lcd</title>
+      <link>http://localhost:1313/tags/lcd/</link>
+      <pubDate>Fri, 03 Apr 2026 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/tags/lcd/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Mqqt</title>
+      <link>http://localhost:1313/tags/mqqt/</link>
+      <pubDate>Fri, 03 Apr 2026 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/tags/mqqt/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Pygame</title>
+      <link>http://localhost:1313/tags/pygame/</link>
+      <pubDate>Fri, 03 Apr 2026 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/tags/pygame/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Waveshare</title>
+      <link>http://localhost:1313/tags/waveshare/</link>
+      <pubDate>Fri, 03 Apr 2026 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/tags/waveshare/</guid>
       <description></description>
     </item>
   </channel>
