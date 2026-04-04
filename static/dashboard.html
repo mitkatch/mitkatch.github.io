@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HVAC-Vibe Live Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #060c12; display: flex; justify-content: center; min-height: 100vh; padding: 24px; }
+    #app { background: #0a0f14; color: #c8d8e8; font-family: monospace; border-radius: 8px; overflow: hidden; width: 100%; max-width: 1100px; }
+    .header { background: #0d1520; border-bottom: 1px solid #1e3048; padding: 6px 12px; display: flex; align-items: center; justify-content: space-between; }
+    .brand { color: #4ab4f0; font-size: 13px; font-weight: 500; }
+    .hgroup { display: flex; align-items: center; gap: 14px; }
+    .conn-dot { width: 8px; height: 8px; border-radius: 50%; background: #333; flex-shrink: 0; }
+    .conn-dot.on { background: #3ddc84; } .conn-dot.warn { background: #f0c040; }
+    .conn-label { font-size: 11px; color: #7a9ab8; }
+    .signal-bars { display: flex; align-items: flex-end; gap: 2px; height: 12px; }
+    .sbar { width: 3px; background: #1e3048; border-radius: 1px; }
+    .sbar.on { background: #4ab4f0; }
+    .rssi-val { font-size: 10px; color: #5a7a9a; }
+    .clock { font-size: 12px; color: #7a9ab8; letter-spacing: 1px; }
+    .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: #1e3048; border-bottom: 1px solid #1e3048; }
+    .tile { background: #0d1520; padding: 10px 14px; }
+    .tile-label { font-size: 9px; color: #5a7a9a; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+    .tile-val { font-size: 22px; font-weight: 500; line-height: 1; }
+    .tile-unit { font-size: 10px; color: #5a7a9a; margin-left: 2px; }
+    .vib { color: #f0c040; } .temp { color: #f0c040; } .hum { color: #4ab4f0; } .pres { color: #7a9ab8; }
+    .chart-wrap { padding: 10px 14px 6px; }
+    .chart-header { font-size: 10px; color: #5a7a9a; margin-bottom: 6px; letter-spacing: 1px; display: flex; justify-content: space-between; }
+    .canvas-box { position: relative; height: 240px; }
+    canvas { position: absolute; top:0; left:0; width:100%; height:100%; }
+    canvas#overlay { pointer-events: none; }
+    .status-bar { padding: 4px 12px; font-size: 10px; color: #3a5a7a; border-top: 1px solid #1e3048; display: flex; gap: 16px; align-items: center; }
+    .ws-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #f0c040; margin-right: 4px; vertical-align: middle; }
+    .ws-dot.live { background: #3ddc84; } .ws-dot.err { background: #e05050; }
+    .alm { color: #e05050; font-weight: 500; } .wrn { color: #f0c040; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="hgroup">
+      <span class="brand">HVAC-Vibe</span>
+      <div class="conn-dot" id="conn-dot"></div>
+      <span class="conn-label" id="conn-label">Connecting...</span>
+      <div class="signal-bars" id="sig">
+        <div class="sbar" style="height:3px"></div>
+        <div class="sbar" style="height:6px"></div>
+        <div class="sbar" style="height:9px"></div>
+        <div class="sbar" style="height:12px"></div>
+      </div>
+      <span class="rssi-val" id="rssi">---dBm</span>
+      <span class="rssi-val" id="batt">---%</span>
+    </div>
+    <span class="clock" id="clock">--:--:--</span>
+  </div>
+
+  <div class="tiles">
+    <div class="tile"><div class="tile-label">VIB RMS</div><span class="tile-val vib" id="t-rms">-.---</span><span class="tile-unit">g</span></div>
+    <div class="tile"><div class="tile-label">PEAK</div><span class="tile-val vib" id="t-peak">-.---</span><span class="tile-unit">g</span></div>
+    <div class="tile"><div class="tile-label">TEMP</div><span class="tile-val temp" id="t-temp">--.-</span><span class="tile-unit">°C</span></div>
+    <div class="tile"><div class="tile-label">HUMIDITY</div><span class="tile-val hum" id="t-hum">--.-</span><span class="tile-unit">%RH</span></div>
+    <div class="tile"><div class="tile-label">PRESSURE</div><span class="tile-val pres" id="t-pres">---</span><span class="tile-unit">hPa</span></div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-header">
+      <span>VIB RMS</span>
+      <span id="chart-date" style="color:#3a5a7a"></span>
+    </div>
+    <div class="canvas-box">
+      <canvas id="chart"></canvas>
+      <canvas id="overlay"></canvas>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <span><span class="ws-dot" id="ws-dot"></span><span id="ws-status">connecting…</span></span>
+    <span id="alert-badge"></span>
+    <span id="dom-hz"></span>
+    <span id="history-info" style="margin-left:auto;color:#2a4a6a"></span>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const API_BASE = 'https://api.hvacvibe.ca';
+const WS_URL   = 'wss://api.hvacvibe.ca/ws';
+const ALM_THR  = 0.75;
+const MINUTES  = 1440;
+
+const dayRms = new Array(MINUTES).fill(null);
+let lastRms = null, lastPeak = null;
+
+const xLabels = [];
+for (let m = 0; m < MINUTES; m++)
+  xLabels.push(m % 60 === 0 ? String(Math.floor(m/60)).padStart(2,'0')+':00' : '');
+
+let chart, ws, reconnTimer, currentSensorId, nowMinute = 0, yMax = 1.0;
+
+// ── Helpers ───────────────────────────────────────────────────
+function tick() {
+  const n = new Date();
+  const ts = n.toLocaleTimeString('en-CA', {hour12:false});
+  document.getElementById('clock').textContent = ts;
+  const p = ts.split(':');
+  nowMinute = parseInt(p[0]) * 60 + parseInt(p[1]);
+}
+
+function updateSignal(rssi) {
+  const bars = document.querySelectorAll('#sig .sbar');
+  const s = rssi > -60 ? 4 : rssi > -75 ? 3 : rssi > -85 ? 2 : rssi > -95 ? 1 : 0;
+  bars.forEach((b,i) => b.classList.toggle('on', i < s));
+  document.getElementById('rssi').textContent = rssi + 'dBm';
+}
+
+// Convert minute index to chart pixel X using proportion of chart area
+// This avoids Chart.js category scale getPixelForValue bugs with DPR
+function minToX(ca, minute) {
+  return ca.left + (minute / (MINUTES - 1)) * (ca.right - ca.left);
+}
+
+// ── Chart ─────────────────────────────────────────────────────
+function initChart() {
+  const ctx = document.getElementById('chart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: xLabels,
+      datasets: [
+        {
+          label: 'RMS',
+          data: [...dayRms],
+          borderColor: '#4ab4f0',
+          borderWidth: 1.5,
+          fill: false,
+          tension: 0,
+          pointRadius: 0,
+          pointHoverRadius: 3,
+          spanGaps: false,
+        },
+        {
+          label: 'ALM',
+          data: new Array(MINUTES).fill(ALM_THR),
+          borderColor: '#e05050',
+          borderWidth: 1,
+          borderDash: [4,3],
+          pointRadius: 0,
+          fill: false,
+          tension: 0,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          mode: 'index', intersect: false,
+          callbacks: {
+            title: items => {
+              const i = items[0].dataIndex;
+              return String(Math.floor(i/60)).padStart(2,'0')+':'+String(i%60).padStart(2,'0');
+            },
+            label: c => c.dataset.label === 'RMS' && c.raw !== null ? c.raw.toFixed(3)+' g' : ''
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color:'#3a5a7a', font:{size:9}, maxRotation:0, autoSkip:false,
+            callback: (val, idx) => idx % 60 === 0
+              ? String(Math.floor(idx/60)).padStart(2,'0')+':00' : ''
+          },
+          grid: { color:'#111e2e' }, border: { color:'#1e3048' }
+        },
+        y: {
+          min: 0, max: yMax,
+          ticks: { color:'#3a5a7a', font:{size:9}, callback: v => v.toFixed(2) },
+          grid: { color:'#111e2e' }, border: { color:'#1e3048' }
+        }
+      }
+    }
+  });
+}
+
+// ── Overlay ───────────────────────────────────────────────────
+function drawOverlay() {
+  if (!chart) return;
+  const oc   = document.getElementById('overlay');
+  const cc   = document.getElementById('chart');
+  const rect = cc.getBoundingClientRect();
+  const dpr  = window.devicePixelRatio || 1;
+
+  oc.width  = rect.width  * dpr;
+  oc.height = rect.height * dpr;
+  oc.style.width  = rect.width  + 'px';
+  oc.style.height = rect.height + 'px';
+
+  const ctx = oc.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, rect.width, rect.height);
+
+  const ca     = chart.chartArea;
+  if (!ca) return;
+  const yScale = chart.scales.y;
+  const y0     = yScale.getPixelForValue(0);
+
+  // Gradient fill — walk contiguous non-null segments
+  const grad = ctx.createLinearGradient(0, ca.top, 0, ca.bottom);
+  grad.addColorStop(0,   'rgba(74,180,240,0.45)');
+  grad.addColorStop(0.7, 'rgba(74,180,240,0.1)');
+  grad.addColorStop(1,   'rgba(74,180,240,0.0)');
+
+  let inSeg = false;
+  let segStartM = 0;
+  ctx.beginPath();
+  for (let m = 0; m < MINUTES; m++) {
+    const v = dayRms[m];
+    if (v === null) {
+      if (inSeg) {
+        ctx.lineTo(minToX(ca, m - 1), y0);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.beginPath();
+        inSeg = false;
+      }
+      continue;
+    }
+    const px = minToX(ca, m);
+    const py = yScale.getPixelForValue(v);
+    if (!inSeg) {
+      segStartM = m;
+      ctx.moveTo(px, y0);
+      ctx.lineTo(px, py);
+      inSeg = true;
+    } else {
+      ctx.lineTo(px, py);
+    }
+  }
+  if (inSeg) {
+    const lastM = dayRms.reduce((acc, v, i) => v !== null ? i : acc, 0);
+    ctx.lineTo(minToX(ca, lastM), y0);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+
+  // NOW line — use proportion-based X
+  const nowX = minToX(ca, nowMinute);
+  ctx.save();
+  ctx.strokeStyle = '#f0c040';
+  ctx.lineWidth   = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(nowX, ca.top);
+  ctx.lineTo(nowX, ca.bottom);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#f0c040';
+  ctx.font = '9px monospace';
+  ctx.fillText('NOW', nowX + 4, ca.top + 10);
+
+  const curVal = dayRms[nowMinute];
+  if (curVal !== null) {
+    const nowY = yScale.getPixelForValue(curVal);
+    ctx.beginPath();
+    ctx.arc(nowX, nowY, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#f0c040';
+    ctx.fill();
+    ctx.fillStyle = '#f0c040';
+    ctx.fillText(curVal.toFixed(3) + 'g', nowX + 6, nowY - 5);
+  }
+  ctx.restore();
+}
+
+// ── Data ──────────────────────────────────────────────────────
+function refreshChart() {
+  chart.data.datasets[0].data = [...dayRms];
+  const filled = dayRms.filter(v => v !== null);
+  if (filled.length) {
+    const maxVal = Math.max(...filled);
+    yMax = parseFloat((Math.max(maxVal * 1.15, ALM_THR + 0.1)).toFixed(2));
+    chart.options.scales.y.max = yMax;
+  }
+  chart.update('none');
+  requestAnimationFrame(drawOverlay);
+}
+
+async function loadHistory(sensorId) {
+  try {
+    const resp = await fetch(`${API_BASE}/api/history/${sensorId}`);
+    const data = await resp.json();
+    let count = 0;
+    for (const row of data.history) {
+      const m = row.minute;
+      if (m >= 0 && m < MINUTES && row.vib_rms !== null) {
+        dayRms[m] = parseFloat(row.vib_rms.toFixed(3));
+        count++;
+      }
+    }
+    document.getElementById('chart-date').textContent =
+      new Date().toISOString().slice(0, 10);
+    document.getElementById('history-info').textContent = count + ' min loaded';
+    const lastRow = data.history[data.history.length - 1];
+    if (lastRow && lastRow.vib_rms > 0) {
+      lastRms  = lastRow.vib_rms;
+      lastPeak = lastRow.vib_peak || lastRms;
+      document.getElementById('t-rms').textContent  = lastRms.toFixed(3);
+      document.getElementById('t-peak').textContent = lastPeak.toFixed(3);
+    }
+    refreshChart();
+  } catch(e) { console.warn('History failed:', e); }
+}
+
+function applyState(s) {
+  document.getElementById('conn-dot').className =
+    'conn-dot' + (s.connected ? ' on' : ' warn');
+  document.getElementById('conn-label').textContent =
+    s.connected ? (s.name || 'Connected') : 'Disconnected';
+  document.getElementById('batt').textContent = s.battery + '%';
+  updateSignal(s.rssi);
+
+  if (s.vib_rms > 0) {
+    lastRms = s.vib_rms;
+    document.getElementById('t-rms').textContent = s.vib_rms.toFixed(3);
+  } else if (lastRms !== null) {
+    document.getElementById('t-rms').textContent = lastRms.toFixed(3);
+  }
+  if (s.vib_peak > 0) {
+    lastPeak = s.vib_peak;
+    document.getElementById('t-peak').textContent = s.vib_peak.toFixed(3);
+  } else if (lastPeak !== null) {
+    document.getElementById('t-peak').textContent = lastPeak.toFixed(3);
+  }
+
+  document.getElementById('t-temp').textContent = s.temp_c.toFixed(1);
+  document.getElementById('t-hum').textContent  = s.humidity.toFixed(1);
+  document.getElementById('t-pres').textContent = s.pressure > 0 ? s.pressure : '---';
+  document.getElementById('alert-badge').innerHTML =
+    s.alarm ? '<span class="alm">⬤ ALARM</span>' :
+    s.warn  ? '<span class="wrn">⬤ WARN</span>'  : '';
+  document.getElementById('dom-hz').textContent =
+    s.dominant_hz > 0 ? 'DOM ' + s.dominant_hz.toFixed(1) + ' Hz' : '';
+
+  if (s.vib_rms > 0) {
+    dayRms[nowMinute] = parseFloat(s.vib_rms.toFixed(3));
+    refreshChart();
+  }
+
+  if (!currentSensorId) {
+    currentSensorId = s.sensor_id;
+    loadHistory(s.sensor_id);
+  }
+}
+
+// ── WebSocket ─────────────────────────────────────────────────
+function connect() {
+  const dot = document.getElementById('ws-dot');
+  const sts = document.getElementById('ws-status');
+  dot.className = 'ws-dot'; sts.textContent = 'connecting…';
+  ws = new WebSocket(WS_URL);
+  ws.onopen    = () => { dot.className='ws-dot live'; sts.textContent='live · wss://api.hvacvibe.ca/ws'; clearTimeout(reconnTimer); };
+  ws.onmessage = e => {
+    try {
+      const d = JSON.parse(e.data);
+      if (d.type === 'heartbeat') { dot.className='ws-dot live'; return; }
+      if (d.sensors && d.sensors.length) applyState(d.sensors[0]);
+    } catch(_) {}
+  };
+  ws.onerror = () => { dot.className='ws-dot err'; sts.textContent='error — retrying…'; };
+  ws.onclose = () => {
+    dot.className='ws-dot err';
+    sts.textContent='disconnected — reconnecting in 5s…';
+    reconnTimer = setTimeout(connect, 5000);
+  };
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────
+initChart();
+connect();
+tick();
+setInterval(() => { tick(); requestAnimationFrame(drawOverlay); }, 1000);
+</script>
+</body>
+</html>
