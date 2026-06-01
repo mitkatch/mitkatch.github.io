@@ -1,10 +1,15 @@
-# Thread Border Router on Raspberry Pi Zero 2W with XIAO nRF52840
+---
+title: "Thread Border Router on Raspberry Pi Zero 2W with XIAO nRF52840"
+date: 2026-06-01
+draft: false
+tags: ["raspberry-pi", "ubuntu", "networkmanager", "hostapd", "linux", "hvac-vibe", "OpenThreads", "otbr-agent", "multicasting"]
+description: "This guide covers adding a Thread network interface to a Raspberry Pi Zero 2W using a Seeed XIAO nRF52840 as the Radio Co-Processor (RCP). The XIAO connects to the Pi via UART pins and runs OpenThread RCP firmware, while the Pi runs `otbr-agent` as the Thread Border Router."
+---
 
-## Overview
 
-This guide covers adding a Thread network interface to a Raspberry Pi Zero 2W using a Seeed XIAO nRF52840 as the Radio Co-Processor (RCP). The XIAO connects to the Pi via UART pins and runs OpenThread RCP firmware, while the Pi runs `otbr-agent` as the Thread Border Router.
 
-```
+
+```text
 XIAO nRF52840 (RCP firmware)
     ↕ UART @ 1Mbaud (4 wires)
 Raspberry Pi Zero 2W (otbr-agent)
@@ -36,14 +41,14 @@ Your application / MQTT broker
 
 Create a new application based on the coprocessor sample:
 
-```
+```text
 nRF Connect → Create Application → Browse Samples → openthread/coprocessor
 Board: xiao_ble
 ```
 
 ### prj.conf
 
-```kconfig
+```bash
 # OpenThread RCP core
 CONFIG_OPENTHREAD=y
 CONFIG_OPENTHREAD_COPROCESSOR=y
@@ -66,7 +71,7 @@ CONFIG_USE_SEGGER_RTT=n
 
 This is critical — without this file the firmware has no UART assigned for spinel and will not respond.
 
-```dts
+```json
 / {
     chosen {
         zephyr,ot-uart = &uart0;
@@ -90,7 +95,7 @@ Select-String -Path "C:\path\to\project\build\coprocessor\zephyr\zephyr.dts" -Pa
 ```
 
 You should see:
-```
+```text
 zephyr,ot-uart = &uart0;   /* from xiao_ble.overlay */
 ```
 
@@ -164,7 +169,7 @@ echo "mac802154" | sudo tee -a /etc/modules
 
 ### Pin Connections
 
-```
+```text
 XIAO nRF52840          Pi Zero 2W GPIO Header
 ─────────────          ──────────────────────
 TX  (D6 / P1.11)  →    Pin 10 (GPIO15 / RXD0)
@@ -316,7 +321,7 @@ sudo otbr-agent -v -I wpan0 -B wlan0 \
 ```
 
 Successful output looks like:
-```
+```text
 [NOTE]-AGENT---: Running 0.3.0-thread-reference-...
 [INFO]-APP-----: Radio Co-processor version: OPENTHREAD/ncs-thread-reference-...; Zephyr; ...
 ```
@@ -419,7 +424,7 @@ sudo modprobe mac802154
 
 `ot-ctl` is the command line interface to control `otbr-agent` while it's running. It connects via a local Unix socket to the running daemon.
 
-```
+```text
 ot-ctl  ←→  Unix socket  ←→  otbr-agent  ←→  XIAO RCP  ←→  Thread network
 ```
 
