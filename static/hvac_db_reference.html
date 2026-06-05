@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HVAC-Vibe — Database Reference</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap');
+
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --border:    #30363d;
+    --accent:    #58a6ff;
+    --green:     #3fb950;
+    --yellow:    #d29922;
+    --red:       #f85149;
+    --purple:    #bc8cff;
+    --orange:    #ffa657;
+    --text:      #e6edf3;
+    --muted:     #8b949e;
+    --mono:      'IBM Plex Mono', monospace;
+    --sans:      'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── Layout ── */
+  .shell { display: flex; min-height: 100vh; }
+
+  nav {
+    width: 220px;
+    min-width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  nav .logo {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  nav a {
+    display: block;
+    padding: 6px 20px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13px;
+    transition: color 0.15s;
+  }
+  nav a:hover { color: var(--text); }
+  nav .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 14px 20px 4px;
+  }
+
+  main {
+    flex: 1;
+    padding: 48px 56px;
+    max-width: 960px;
+  }
+
+  /* ── Typography ── */
+  h1 {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 40px;
+    font-family: var(--mono);
+  }
+
+  h2 {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 48px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h3 {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--orange);
+    margin: 24px 0 10px;
+  }
+
+  p { color: var(--muted); margin-bottom: 12px; line-height: 1.7; }
+  strong { color: var(--text); font-weight: 600; }
+
+  /* ── Schema diagram ── */
+  .diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 32px;
+    margin: 20px 0;
+    overflow-x: auto;
+  }
+
+  .tables-row {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .table-box {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    min-width: 200px;
+    flex: 1;
+  }
+
+  .table-header {
+    background: #1f2937;
+    padding: 8px 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .table-header .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+
+  .col-row {
+    padding: 5px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .col-row:hover { background: rgba(88,166,255,0.05); }
+
+  .col-name { color: var(--text); }
+  .col-type { color: var(--muted); }
+  .col-pk   { color: var(--yellow); }
+  .col-fk   { color: var(--purple); }
+  .col-note { color: var(--green); font-size: 10px; }
+
+  .rel-line {
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    padding-top: 40px;
+    color: var(--border);
+    font-size: 20px;
+    font-family: var(--mono);
+    flex-direction: column;
+    gap: 4px;
+  }
+  .rel-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  /* ── Write flow ── */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 16px 0;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .flow-node {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+
+  .flow-arrow { color: var(--muted); }
+
+  .node-sensor  { background: #1a2744; color: var(--accent); border: 1px solid #253a6b; }
+  .node-engine  { background: #1a2a1a; color: var(--green); border: 1px solid #2a3d2a; }
+  .node-table   { background: #2a2010; color: var(--orange); border: 1px solid #3d3010; }
+  .node-mqtt    { background: #1e1a2a; color: var(--purple); border: 1px solid #2e2a3d; }
+
+  /* ── Code blocks ── */
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin: 12px 0;
+  }
+
+  .comment { color: var(--muted); }
+  .keyword { color: var(--purple); }
+  .string  { color: var(--green); }
+  .number  { color: var(--orange); }
+  .fn      { color: var(--accent); }
+
+  /* ── Tables ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  th {
+    background: var(--surface);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 10px;
+    padding: 8px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+  }
+
+  td.muted { color: var(--muted); }
+  td.green { color: var(--green); }
+  td.yellow { color: var(--yellow); }
+  td.red { color: var(--red); }
+
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* ── Callouts ── */
+  .callout {
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 13px;
+    border-left: 3px solid;
+    line-height: 1.6;
+  }
+
+  .callout-info  { background: #1a2744; border-color: var(--accent);  color: #93c5fd; }
+  .callout-warn  { background: #2a2010; border-color: var(--yellow); color: #fcd34d; }
+  .callout-tip   { background: #1a2a1a; border-color: var(--green);  color: #86efac; }
+
+  /* ── Badge ── */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  .badge-pk     { background: #2a2510; color: var(--yellow); }
+  .badge-fk     { background: #1e1a2a; color: var(--purple); }
+  .badge-idx    { background: #1a2a1a; color: var(--green); }
+  .badge-auto   { background: #1a2020; color: #5eead4; }
+
+  /* ── Size bar ── */
+  .size-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0;
+  }
+  .size-fill {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--accent);
+    opacity: 0.7;
+  }
+  .size-label { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+  section { scroll-margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<nav>
+  <div class="logo">HVAC-Vibe<br>DB Reference</div>
+  <div class="section-label">Schema</div>
+  <a href="#overview">Overview</a>
+  <a href="#sensors">sensors</a>
+  <a href="#history_time">history_time</a>
+  <a href="#history_fft">history_fft</a>
+  <a href="#diagram">ER Diagram</a>
+  <div class="section-label">Data Flow</div>
+  <a href="#write-flow">Write paths</a>
+  <a href="#retention">Retention</a>
+  <div class="section-label">Operations</div>
+  <a href="#add-sensor">Add sensor</a>
+  <a href="#remove-sensor">Remove sensor</a>
+  <a href="#purge">Purge old data</a>
+  <a href="#inspect">Inspect / debug</a>
+  <a href="#backup">Backup</a>
+</nav>
+
+<main>
+
+  <h1>engine.db — Database Reference</h1>
+  <div class="subtitle">SQLite · WAL mode · /home/mitkatch/hvac-engine/engine.db</div>
+
+  <!-- ── OVERVIEW ── -->
+  <section id="overview">
+    <h2>Overview</h2>
+    <p>Three tables, two independent write paths, no foreign key constraints (SQLite pragmatics). Data flows from Thread sensor → engine → DB → MQTT → dashboard.</p>
+
+    <table>
+      <tr><th>Table</th><th>Purpose</th><th>Write rate</th><th>Rows/day</th><th>Retention</th></tr>
+      <tr>
+        <td class="green">sensors</td>
+        <td class="muted">One row per sensor, live state snapshot</td>
+        <td class="muted">Every burst (~10s)</td>
+        <td class="muted">1 (upsert)</td>
+        <td class="muted">Forever (manual)</td>
+      </tr>
+      <tr>
+        <td class="yellow">history_time</td>
+        <td class="muted">Per-minute time-domain aggregates</td>
+        <td class="muted">Once per minute</td>
+        <td class="muted">1,440 max</td>
+        <td class="muted">Manual / cron</td>
+      </tr>
+      <tr>
+        <td style="color:var(--orange)">history_fft</td>
+        <td class="muted">Per-burst FFT fault energies</td>
+        <td class="muted">Every burst (~10s)</td>
+        <td class="muted">~8,640</td>
+        <td class="muted">Manual / cron</td>
+      </tr>
+    </table>
+
+    <div class="callout callout-warn">
+      <strong>Storage note:</strong> history_fft grows ~8,640 rows/day per sensor. At current count of 17,408 rows that's ~2 days of data. On a 32 GB SD card this is fine indefinitely, but a retention policy is recommended to keep query performance sharp.
+    </div>
+  </section>
+
+  <!-- ── SENSORS ── -->
+  <section id="sensors">
+    <h2>sensors table</h2>
+    <p>One row per sensor. Acts as a live state cache — survives engine restarts via <code>_load_live_state()</code>. Written on every burst via <code>INSERT OR REPLACE</code>.</p>
+
+    <table>
+      <tr><th>Column</th><th>Type</th><th>Units</th><th>Notes</th></tr>
+      <tr><td><span class="badge badge-pk">PK</span> sensor_id</td><td class="muted">TEXT</td><td class="muted">—</td><td class="muted">e.g. hvac-vibe-2be618</td></tr>
+      <tr><td>name</td><td class="muted">TEXT</td><td class="muted">—</td><td class="muted">Human label from config</td></tr>
+      <tr><td>address</td><td class="muted">TEXT</td><td class="muted">—</td><td class="muted">Thread IPv6 address</td></tr>
+      <tr><td>connected</td><td class="muted">INTEGER</td><td class="muted">0/1</td><td class="muted">Set 0 on engine stop</td></tr>
+      <tr><td>vib_rms</td><td class="muted">REAL</td><td class="muted">g</td><td class="muted">Vector RMS across 3 axes</td></tr>
+      <tr><td>vib_peak</td><td class="muted">REAL</td><td class="muted">g</td><td class="muted">Peak acceleration</td></tr>
+      <tr><td>dominant_hz</td><td class="muted">REAL</td><td class="muted">Hz</td><td class="muted">Dominant FFT frequency</td></tr>
+      <tr><td>alarm / warn</td><td class="muted">INTEGER</td><td class="muted">0/1</td><td class="muted">alarm ≥ 0.60g, warn ≥ 0.50g</td></tr>
+      <tr><td>crest_x/y/z</td><td class="muted">REAL</td><td class="muted">—</td><td class="muted">&lt;1.5 smooth, &gt;3.0 impulsive</td></tr>
+      <tr><td>kurtosis_x/y/z</td><td class="muted">REAL</td><td class="muted">—</td><td class="muted">3.0=normal, &gt;4=early fault</td></tr>
+      <tr><td>x_bpfo/bpfi/bsf/ftf</td><td class="muted">REAL</td><td class="muted">energy</td><td class="muted">Bearing fault band energies</td></tr>
+      <tr><td>x_snr_bpfo / max_snr_bpfo</td><td class="muted">REAL</td><td class="muted">—</td><td class="muted">&gt;2.0 = outer race suspect</td></tr>
+      <tr><td>temp_c / humidity / pressure</td><td class="muted">REAL/INT</td><td class="muted">°C / % / Pa</td><td class="muted">BME280 reading</td></tr>
+      <tr><td>battery / rssi</td><td class="muted">INTEGER</td><td class="muted">% / dBm</td><td class="muted">BLE legacy — unused in Thread</td></tr>
+      <tr><td>last_seen</td><td class="muted">REAL</td><td class="muted">unix ts</td><td class="muted">Updated every burst</td></tr>
+      <tr><td>updated_at</td><td class="muted">TEXT</td><td class="muted">ISO datetime</td><td class="muted">SQLite datetime('now')</td></tr>
+    </table>
+  </section>
+
+  <!-- ── HISTORY_TIME ── -->
+  <section id="history_time">
+    <h2>history_time table</h2>
+    <p>Per-minute time-domain features. Primary key is <code>(sensor_id, date, minute_of_day)</code> — within one minute, repeated bursts overwrite the row (last-write wins). Used by the dashboard VIB RMS chart.</p>
+
+    <table>
+      <tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+      <tr><td><span class="badge badge-fk">FK</span> sensor_id</td><td class="muted">TEXT</td><td class="muted">refs sensors.sensor_id (no constraint)</td></tr>
+      <tr><td><span class="badge badge-pk">PK</span> minute_of_day</td><td class="muted">INTEGER</td><td class="muted">0–1439 (hour×60 + minute)</td></tr>
+      <tr><td><span class="badge badge-pk">PK</span> date</td><td class="muted">TEXT</td><td class="muted">YYYY-MM-DD</td></tr>
+      <tr><td>vib_rms / vib_peak</td><td class="muted">REAL</td><td class="muted">g — last value in that minute</td></tr>
+      <tr><td>dominant_hz</td><td class="muted">REAL</td><td class="muted">Hz from FFT stats</td></tr>
+      <tr><td>crest_x/y/z</td><td class="muted">REAL</td><td class="muted">Dimensionless</td></tr>
+      <tr><td>kurtosis_x/y/z</td><td class="muted">REAL</td><td class="muted">3.0=normal baseline</td></tr>
+      <tr><td>temp_c / humidity</td><td class="muted">REAL</td><td class="muted">°C / %RH snapshot</td></tr>
+      <tr><td>alarm / warn</td><td class="muted">INTEGER</td><td class="muted">0/1 — state at that minute</td></tr>
+      <tr><td>synced</td><td class="muted">INTEGER</td><td class="muted">0=pending cloud upload</td></tr>
+    </table>
+
+    <h3>Indexes</h3>
+    <pre><span class="comment">-- Fast chart queries (date range per sensor)</span>
+idx_time_sensor_date  ON history_time(sensor_id, date)
+<span class="comment">-- Cloud sync batch (find unsynced rows)</span>
+idx_time_unsynced     ON history_time(synced, date)</pre>
+  </section>
+
+  <!-- ── HISTORY_FFT ── -->
+  <section id="history_fft">
+    <h2>history_fft table</h2>
+    <p>Append-only per-burst FFT bearing fault features. Unlike history_time, every burst creates a new row — this is the high-resolution fault detection log. <code>minute_of_day</code> allows JOIN with history_time for ML datasets.</p>
+
+    <table>
+      <tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+      <tr><td><span class="badge badge-auto">AUTO</span> id</td><td class="muted">INTEGER</td><td class="muted">Autoincrement PK</td></tr>
+      <tr><td><span class="badge badge-fk">FK</span> sensor_id</td><td class="muted">TEXT</td><td class="muted">refs sensors.sensor_id</td></tr>
+      <tr><td>ts</td><td class="muted">INTEGER</td><td class="muted">Unix timestamp (seconds)</td></tr>
+      <tr><td>date</td><td class="muted">TEXT</td><td class="muted">YYYY-MM-DD (denormalized for fast date queries)</td></tr>
+      <tr><td>minute_of_day</td><td class="muted">INTEGER</td><td class="muted">0–1439 — JOIN key with history_time</td></tr>
+      <tr><td>seq</td><td class="muted">INTEGER</td><td class="muted">Firmware burst sequence number</td></tr>
+      <tr><td>x_bpfo / x_bpfi / x_bsf / x_ftf</td><td class="muted">REAL</td><td class="muted">Bearing fault band energies (x-axis)</td></tr>
+      <tr><td>x_snr_bpfo</td><td class="muted">REAL</td><td class="muted">SNR at BPFO bin — &gt;2.0 = outer race suspect</td></tr>
+      <tr><td>max_snr_bpfo</td><td class="muted">REAL</td><td class="muted">Max SNR across all 3 axes</td></tr>
+      <tr><td>synced</td><td class="muted">INTEGER</td><td class="muted">0=pending cloud upload</td></tr>
+    </table>
+
+    <h3>ML JOIN query</h3>
+    <pre><span class="keyword">SELECT</span> t.date, t.minute_of_day,
+       t.vib_rms, t.kurtosis_x, t.crest_x,
+       t.temp_c, t.alarm,
+       f.x_bpfo, f.x_bpfi, f.x_snr_bpfo
+<span class="keyword">FROM</span>   history_time t
+<span class="keyword">LEFT JOIN</span> history_fft f
+  <span class="keyword">ON</span>  t.sensor_id     = f.sensor_id
+  <span class="keyword">AND</span> t.date          = f.date
+  <span class="keyword">AND</span> t.minute_of_day = f.minute_of_day
+<span class="keyword">WHERE</span>  t.sensor_id = <span class="string">'hvac-vibe-2be618'</span>
+  <span class="keyword">AND</span>  t.date <span class="keyword">BETWEEN</span> <span class="string">'2026-06-01'</span> <span class="keyword">AND</span> <span class="string">'2026-06-04'</span>
+<span class="keyword">ORDER BY</span> t.date, t.minute_of_day;</pre>
+  </section>
+
+  <!-- ── ER DIAGRAM ── -->
+  <section id="diagram">
+    <h2>ER Diagram</h2>
+    <div class="diagram">
+      <div class="tables-row">
+
+        <div class="table-box">
+          <div class="table-header">
+            <span class="dot" style="background:var(--green)"></span>
+            sensors
+          </div>
+          <div class="col-row"><span class="col-name col-pk">sensor_id PK</span><span class="col-type">TEXT</span></div>
+          <div class="col-row"><span class="col-name">name</span><span class="col-type">TEXT</span></div>
+          <div class="col-row"><span class="col-name">address</span><span class="col-type">TEXT</span></div>
+          <div class="col-row"><span class="col-name">vib_rms</span><span class="col-type">REAL g</span></div>
+          <div class="col-row"><span class="col-name">kurtosis_x/y/z</span><span class="col-type">REAL</span></div>
+          <div class="col-row"><span class="col-name">x_bpfo…ftf</span><span class="col-type">REAL</span></div>
+          <div class="col-row"><span class="col-name">temp_c / humidity</span><span class="col-type">REAL</span></div>
+          <div class="col-row"><span class="col-name">last_seen</span><span class="col-type">REAL ts</span></div>
+        </div>
+
+        <div class="rel-line">
+          <span>⇢</span>
+          <span class="rel-label">sensor_id<br>(logical)</span>
+        </div>
+
+        <div class="table-box">
+          <div class="table-header">
+            <span class="dot" style="background:var(--yellow)"></span>
+            history_time
+          </div>
+          <div class="col-row"><span class="col-name col-pk">sensor_id PK</span><span class="col-type">TEXT</span></div>
+          <div class="col-row"><span class="col-name col-pk">date PK</span><span class="col-type">TEXT</span></div>
+          <div class="col-row"><span class="col-name col-pk">minute_of_day PK</span><span class="col-type">INT 0-1439</span></div>
+          <div class="col-row"><span class="col-name">vib_rms / vib_peak</span><span class="col-type">REAL g</span></div>
+          <div class="col-row"><span class="col-name">crest_x/y/z</span><span class="col-type">REAL</span></div>
+          <div class="col-row"><span class="col-name">kurtosis_x/y/z</span><span class="col-type">REAL</span></div>
+          <div class="col-row"><span class="col-name">temp_c / humidity</span><span class="col-type">REAL</span></div>
+          <div class="col-row"><span class="col-name">alarm / warn</span><span class="col-type">INT 0/1</span></div>
+          <div class="col-row"><span class="col-name col-note">synced</span><span class="col-type">INT</span></div>
+        </div>
+
+        <div class="rel-line">
+          <span>⇢</span>
+          <span class="rel-label">sensor_id<br>+ date<br>+ minute</span>
+        </div>
+
+        <div class="table-box">
+          <div class="table-header">
+            <span class="dot" style="background:var(--orange)"></span>
+            history_fft
+          </div>
+          <div class="col-row"><span class="col-name col-pk">id PK</span><span class="col-type">INT AUTO</span></div>
+          <div class="col-row"><span class="col-name">sensor_id</span><span class="col-type">TEXT</span></div>
+          <div class="col-row"><span class="col-name">ts</span><span class="col-type">INT unix</span></div>
+          <div class="col-row"><span class="col-name">date</span><span class="col-type">TEXT</span></div>
+          <div class="col-row"><span class="col-name">minute_of_day</span><span class="col-type">INT ← JOIN</span></div>
+          <div class="col-row"><span class="col-name">seq</span><span class="col-type">INT firmware</span></div>
+          <div class="col-row"><span class="col-name">x_bpfo/bpfi/bsf/ftf</span><span class="col-type">REAL</span></div>
+          <div class="col-row"><span class="col-name">x_snr_bpfo</span><span class="col-type">REAL &gt;2=fault</span></div>
+          <div class="col-row"><span class="col-name col-note">synced</span><span class="col-type">INT</span></div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── WRITE FLOW ── -->
+  <section id="write-flow">
+    <h2>Write paths</h2>
+
+    <h3>Time-domain path (every burst ~10s)</h3>
+    <div class="flow">
+      <span class="flow-node node-sensor">XIAO Thread sensor</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node node-engine">engine_thread.py<br>_parse_time_stats()</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node node-engine">SensorSession<br>._publish_time_stats()</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node node-engine">store.update_time_stats()</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node node-table">sensors (upsert)<br>history_time (upsert/min)</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node node-mqtt">MQTT vibration/time_stats</span>
+    </div>
+
+    <h3>FFT path (every burst ~10s)</h3>
+    <div class="flow">
+      <span class="flow-node node-sensor">XIAO Thread sensor</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node node-engine">engine_thread.py<br>_parse_fft_stats()</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node node-engine">SensorSession<br>._publish_fft_stats()</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node node-engine">store.update_fft_stats()</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node node-table">history_fft (INSERT)</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node node-mqtt">MQTT vibration/fft_stats</span>
+    </div>
+
+    <div class="callout callout-info">
+      The two paths are <strong>completely independent</strong>. history_time uses INSERT OR REPLACE on (sensor_id, date, minute_of_day) — multiple bursts in the same minute overwrite. history_fft always appends a new row per burst.
+    </div>
+  </section>
+
+  <!-- ── RETENTION ── -->
+  <section id="retention">
+    <h2>Retention policy</h2>
+    <p>There is currently <strong>no automatic deletion</strong> in engine_store.py. Data accumulates until manually purged. Recommended cron-based retention:</p>
+
+    <table>
+      <tr><th>Table</th><th>Recommended retention</th><th>Reason</th></tr>
+      <tr><td class="yellow">history_time</td><td class="muted">90 days</td><td class="muted">Per-minute data — 90 days = 130K rows/sensor</td></tr>
+      <tr><td style="color:var(--orange)">history_fft</td><td class="muted">30 days</td><td class="muted">Per-burst — grows 8,640 rows/day/sensor</td></tr>
+    </table>
+
+    <h3>Manual purge (run any time)</h3>
+    <pre><span class="comment">-- Keep last 90 days of per-minute data</span>
+<span class="keyword">DELETE FROM</span> history_time
+<span class="keyword">WHERE</span> date < date(<span class="string">'now'</span>, <span class="string">'-90 days'</span>);
+
+<span class="comment">-- Keep last 30 days of FFT data</span>
+<span class="keyword">DELETE FROM</span> history_fft
+<span class="keyword">WHERE</span> date < date(<span class="string">'now'</span>, <span class="string">'-30 days'</span>);
+
+<span class="comment">-- Reclaim space after bulk delete</span>
+VACUUM;</pre>
+
+    <h3>Install as nightly cron (2:00 AM)</h3>
+    <pre><span class="comment"># On Pi — run: crontab -e</span>
+0 2 * * * sqlite3 /home/mitkatch/hvac-engine/engine.db \
+  "DELETE FROM history_time WHERE date < date('now','-90 days'); \
+   DELETE FROM history_fft  WHERE date < date('now','-30 days'); \
+   VACUUM;"</pre>
+  </section>
+
+  <!-- ── ADD SENSOR ── -->
+  <section id="add-sensor">
+    <h2>Add a new sensor</h2>
+
+    <p><strong>Step 1 — Flash the firmware</strong> with matching Thread credentials (channel 23, PAN 0xC442, network key). The sensor auto-joins.</p>
+
+    <p><strong>Step 2 — Find the sensor's Thread IPv6 address</strong> on the Pi:</p>
+    <pre>sudo ot-ctl child table
+<span class="comment"># Note the new child's RLOC16, then:</span>
+sudo ot-ctl ipaddr</pre>
+
+    <p>Or watch engine logs for the auto-detected address:</p>
+    <pre>sudo journalctl -u hvac-engine -f | grep "New Thread sensor"
+<span class="comment"># Output: New Thread sensor: thread-XXXX @ fd54:b06a:...</span></pre>
+
+    <p><strong>Step 3 — Map the address to a stable sensor_id</strong> in <code>config.json</code>:</p>
+    <pre>{
+  <span class="string">"thread_sensors"</span>: {
+    <span class="string">"fd54:b06a:fe40:1:603b:9690:f851:ec4d"</span>: <span class="string">"hvac-vibe-2be618"</span>,
+    <span class="string">"fd54:b06a:fe40:1:XXXX:XXXX:XXXX:XXXX"</span>: <span class="string">"hvac-vibe-unit2"</span>
+  }
+}</pre>
+
+    <p><strong>Step 4 — Restart the engine:</strong></p>
+    <pre>sudo systemctl restart hvac-engine</pre>
+
+    <p><strong>Step 5 — Verify the sensor appears in the DB:</strong></p>
+    <pre>sqlite3 ~/hvac-engine/engine.db \
+  <span class="string">"SELECT sensor_id, name, last_seen FROM sensors;"</span></pre>
+  </section>
+
+  <!-- ── REMOVE SENSOR ── -->
+  <section id="remove-sensor">
+    <h2>Remove / retire a sensor</h2>
+
+    <div class="callout callout-warn">
+      Removing a sensor from config.json stops new data from being written but does NOT delete historical data. Delete history explicitly if needed.
+    </div>
+
+    <p><strong>Step 1 — Remove from config.json</strong> (delete the thread_sensors entry).</p>
+    <p><strong>Step 2 — Restart the engine.</strong></p>
+    <p><strong>Step 3 — Optionally delete all historical data:</strong></p>
+    <pre><span class="comment">-- Replace 'old-sensor-id' with the actual sensor_id</span>
+sqlite3 ~/hvac-engine/engine.db <span class="string">"
+DELETE FROM sensors      WHERE sensor_id='old-sensor-id';
+DELETE FROM history_time WHERE sensor_id='old-sensor-id';
+DELETE FROM history_fft  WHERE sensor_id='old-sensor-id';
+VACUUM;
+"</span></pre>
+
+    <p><strong>To keep history but hide from dashboard</strong> — just remove from config.json. The rows remain for ML/analysis use.</p>
+  </section>
+
+  <!-- ── PURGE ── -->
+  <section id="purge">
+    <h2>Purge stale / ghost sensors</h2>
+    <p>After migrating from BLE to Thread, ghost sensor IDs (e.g. <code>thread-ec4d</code>) may exist. Clean them up:</p>
+
+    <pre><span class="comment">-- List all sensors with last_seen timestamp</span>
+sqlite3 ~/hvac-engine/engine.db \
+  <span class="string">"SELECT sensor_id, name,
+          datetime(last_seen,'unixepoch','localtime') as last_seen
+   FROM sensors ORDER BY last_seen DESC;"</span>
+
+<span class="comment">-- Delete a ghost sensor and all its history</span>
+sqlite3 ~/hvac-engine/engine.db \
+  <span class="string">"DELETE FROM sensors      WHERE sensor_id='thread-ec4d';
+   DELETE FROM history_time WHERE sensor_id='thread-ec4d';
+   DELETE FROM history_fft  WHERE sensor_id='thread-ec4d';
+   VACUUM;"</span></pre>
+  </section>
+
+  <!-- ── INSPECT ── -->
+  <section id="inspect">
+    <h2>Inspect and debug</h2>
+
+    <h3>Check today's data volume</h3>
+    <pre>sqlite3 ~/hvac-engine/engine.db <span class="string">"
+SELECT
+  (SELECT COUNT(*) FROM history_time WHERE date=date('now')) as time_rows_today,
+  (SELECT COUNT(*) FROM history_fft  WHERE date=date('now')) as fft_rows_today,
+  (SELECT COUNT(*) FROM history_time) as time_total,
+  (SELECT COUNT(*) FROM history_fft)  as fft_total;
+"</span></pre>
+
+    <h3>Check last 5 readings</h3>
+    <pre>sqlite3 ~/hvac-engine/engine.db <span class="string">"
+SELECT date, minute_of_day, vib_rms, kurtosis_x, temp_c, alarm
+FROM history_time
+WHERE sensor_id='hvac-vibe-2be618'
+ORDER BY date DESC, minute_of_day DESC
+LIMIT 5;
+"</span></pre>
+
+    <h3>Check for alarm events</h3>
+    <pre>sqlite3 ~/hvac-engine/engine.db <span class="string">"
+SELECT date, minute_of_day, vib_rms, kurtosis_x
+FROM history_time
+WHERE sensor_id='hvac-vibe-2be618' AND alarm=1
+ORDER BY date DESC, minute_of_day DESC;
+"</span></pre>
+
+    <h3>Check DB file size</h3>
+    <pre>ls -lh ~/hvac-engine/engine.db
+sqlite3 ~/hvac-engine/engine.db <span class="string">"SELECT page_count * page_size / 1024 || ' KB' FROM pragma_page_count(), pragma_page_size();"</span></pre>
+  </section>
+
+  <!-- ── BACKUP ── -->
+  <section id="backup">
+    <h2>Backup</h2>
+    <p>SQLite WAL mode is safe to copy while the engine is running using the <code>.backup</code> command:</p>
+
+    <pre><span class="comment"># Safe online backup (no engine stop needed)</span>
+sqlite3 ~/hvac-engine/engine.db \
+  <span class="string">".backup /home/mitkatch/hvac-engine/engine.db.bak"</span>
+
+<span class="comment"># Or copy to another location with timestamp</span>
+sqlite3 ~/hvac-engine/engine.db \
+  <span class="string">".backup /tmp/engine-$(date +%Y%m%d).db"</span></pre>
+
+    <h3>Automated weekly backup via cron</h3>
+    <pre><span class="comment"># crontab -e — runs Sunday 3:00 AM, keeps 4 weeks</span>
+0 3 * * 0 sqlite3 /home/mitkatch/hvac-engine/engine.db \
+  ".backup /home/mitkatch/hvac-engine/backups/engine-$(date +\%Y\%m\%d).db" && \
+  find /home/mitkatch/hvac-engine/backups -name "*.db" -mtime +28 -delete</pre>
+
+    <div class="callout callout-tip">
+      Create the backups directory first: <code>mkdir -p ~/hvac-engine/backups</code>
+    </div>
+  </section>
+
+</main>
+</div>
+</body>
+</html>

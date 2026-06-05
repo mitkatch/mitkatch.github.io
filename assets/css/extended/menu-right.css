@@ -1,0 +1,11 @@
+#menu {
+    margin-left: auto;
+}
+
+.nav {
+    justify-content: space-between;
+}
+
+.logo {
+    margin-right: auto;
+}

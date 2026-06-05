@@ -55,4 +55,8 @@ enableEmoji = true
   name = "Dashboard"
   url = "/dashboard/"
   weight = 30
-  
+
+[[menu.main]]
+  name = "DB Reference"
+  url = "/db-reference/"
+  weight = 40 
